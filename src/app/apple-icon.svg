@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <defs>
+    <linearGradient id="nf-apple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <!-- Background Squircle for Apple Icon -->
+  <rect width="180" height="180" rx="44" fill="url(#nf-apple-grad)" />
+  <!-- Shield Silhouette -->
+  <path d="M90 38C90 38 124 44 130 64C130 98 104 126 90 140C76 126 50 98 50 64C56 44 90 38 90 38Z" fill="white" fill-opacity="0.22" />
+  <!-- Bold Checkmark / Shield Sentinel -->
+  <path d="M72 88L85 102L110 70" stroke="white" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Pulse Sparkle -->
+  <circle cx="126" cy="52" r="7" fill="#38bdf8" />
+</svg>

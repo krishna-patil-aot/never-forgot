@@ -1,0 +1,276 @@
+'use client';
+
+import * as React from 'react';
+import {
+  Sparkles,
+  FileCheck,
+  CheckCircle,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useInvoiceScanner } from '@/hooks/useInvoiceScanner';
+import { AssetCategory } from '@/types/asset.types';
+
+export function AiReviewModal() {
+  const {
+    isReviewModalOpen,
+    extractedData,
+    setIsReviewModalOpen,
+    updateExtractedField,
+    handleConfirmAndSave,
+    resetScan,
+  } = useInvoiceScanner();
+
+  if (!extractedData) return null;
+
+  // Auto update expiry date when validity or start date changes
+  const handleValidityChange = (months: number) => {
+    updateExtractedField('validityMonths', months);
+    try {
+      const start = new Date(extractedData.startDate);
+      if (!isNaN(start.getTime())) {
+        const expiry = new Date(start);
+        expiry.setMonth(expiry.getMonth() + months);
+        updateExtractedField(
+          'expiryOrRenewalDate',
+          expiry.toISOString().split('T')[0]
+        );
+      }
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleStartDateChange = (startDate: string) => {
+    updateExtractedField('startDate', startDate);
+    try {
+      const start = new Date(startDate);
+      if (!isNaN(start.getTime())) {
+        const expiry = new Date(start);
+        expiry.setMonth(expiry.getMonth() + extractedData.validityMonths);
+        updateExtractedField(
+          'expiryOrRenewalDate',
+          expiry.toISOString().split('T')[0]
+        );
+      }
+    } catch {
+      // Fallback
+    }
+  };
+
+  return (
+    <Dialog
+      open={isReviewModalOpen}
+      onOpenChange={(open) => {
+        setIsReviewModalOpen(open);
+        if (!open) resetScan();
+      }}
+    >
+      <DialogContent className="sm:max-w-xl max-h-[88vh] sm:max-h-[90vh] overflow-y-auto bg-white border-border shadow-2xl">
+        <DialogHeader>
+          <div className="flex flex-col min-[480px]:flex-row min-[480px]:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
+                <FileCheck className="h-4 w-4" />
+              </div>
+              <DialogTitle className="text-base sm:text-lg font-bold leading-snug break-words">
+                Review AI Extracted Details
+              </DialogTitle>
+            </div>
+            <div className="self-start min-[480px]:self-auto">
+              <Badge variant="success" className="text-xs font-semibold px-2 py-0.5">
+                <Sparkles className="h-3 w-3 mr-1" />
+                {extractedData.confidenceScore}% Confidence
+              </Badge>
+            </div>
+          </div>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5 leading-normal">
+            Please verify the extracted values below. You can adjust any field before saving to your vault.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* AI Insight Pill */}
+        <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2">
+          <Sparkles className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">{extractedData.rawSummary}</p>
+        </div>
+
+        {/* Form Fields */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+          {/* Title */}
+          <div className="sm:col-span-2 space-y-1.5">
+            <Label>Product or Policy Name</Label>
+            <Input
+              value={extractedData.title}
+              onChange={(e) => updateExtractedField('title', e.target.value)}
+              placeholder="e.g. iPhone 15 Pro, Royal Enfield Hunter"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Provider / Brand */}
+          <div className="space-y-1.5">
+            <Label>Brand or Issuer</Label>
+            <Input
+              value={extractedData.providerOrBrand}
+              onChange={(e) =>
+                updateExtractedField('providerOrBrand', e.target.value)
+              }
+              placeholder="e.g. Apple, Star Health, Hero"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Category */}
+          <div className="space-y-1.5">
+            <Label>Category</Label>
+            <Select
+              value={extractedData.category}
+              onValueChange={(val) =>
+                updateExtractedField('category', val as AssetCategory)
+              }
+            >
+              <SelectTrigger className="w-full h-10 rounded-lg border-border bg-white text-sm cursor-pointer">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-border bg-white shadow-xl">
+                <SelectItem value="electronics" className="text-sm cursor-pointer">
+                  Electronics & Gadgets
+                </SelectItem>
+                <SelectItem value="vehicle" className="text-sm cursor-pointer">
+                  Vehicle & Two-Wheeler
+                </SelectItem>
+                <SelectItem value="health_insurance" className="text-sm cursor-pointer">
+                  Health Insurance
+                </SelectItem>
+                <SelectItem value="life_insurance" className="text-sm cursor-pointer">
+                  Life Insurance
+                </SelectItem>
+                <SelectItem value="home_amc" className="text-sm cursor-pointer">
+                  Home Appliance AMC
+                </SelectItem>
+                <SelectItem value="personal_doc" className="text-sm cursor-pointer">
+                  Personal Document
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Identifier / Serial / Policy # */}
+          <div className="space-y-1.5">
+            <Label>Serial / IMEI / Policy #</Label>
+            <Input
+              value={extractedData.identifierNumber || ''}
+              onChange={(e) =>
+                updateExtractedField('identifierNumber', e.target.value)
+              }
+              placeholder="e.g. Serial, IMEI or Reg Number"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Price */}
+          <div className="space-y-1.5">
+            <Label>Purchase Price / Premium (₹)</Label>
+            <Input
+              type="number"
+              value={extractedData.price || ''}
+              onChange={(e) =>
+                updateExtractedField(
+                  'price',
+                  e.target.value ? Number(e.target.value) : null
+                )
+              }
+              placeholder="e.g. 50000"
+              className="text-sm"
+            />
+          </div>
+
+          {/* Start Date */}
+          <div className="space-y-1.5">
+            <Label>Purchase / Start Date</Label>
+            <DatePicker
+              value={extractedData.startDate}
+              onChange={(dateStr) => handleStartDateChange(dateStr)}
+              placeholder="Pick start date"
+            />
+          </div>
+
+          {/* Validity Months */}
+          <div className="space-y-1.5">
+            <Label>Warranty Validity (Months)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={extractedData.validityMonths}
+              onChange={(e) => handleValidityChange(Number(e.target.value))}
+              className="text-sm"
+            />
+          </div>
+
+          {/* Expiry Date */}
+          <div className="sm:col-span-2 space-y-1.5 p-3 rounded-xl bg-blue-50/50 border border-blue-200/70">
+            <div className="flex justify-between items-center">
+              <Label className="text-blue-700 font-semibold">Calculated Expiry / Renewal Date</Label>
+              <Badge variant="cyan" className="text-[10px]">
+                Auto Calculated
+              </Badge>
+            </div>
+            <DatePicker
+              value={extractedData.expiryOrRenewalDate}
+              onChange={(dateStr) =>
+                updateExtractedField('expiryOrRenewalDate', dateStr)
+              }
+              placeholder="Pick expiry date"
+              className="font-semibold text-foreground bg-white"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-3 border-t border-border/40">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setIsReviewModalOpen(false);
+              resetScan();
+            }}
+            className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer"
+          >
+            Discard
+          </Button>
+
+          <Button
+            type="button"
+            variant="glow"
+            size="sm"
+            className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5"
+            onClick={handleConfirmAndSave}
+          >
+            <CheckCircle className="h-4 w-4" />
+            <span>Confirm & Save to Vault</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
