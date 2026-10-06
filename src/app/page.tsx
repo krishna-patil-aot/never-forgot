@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { Plus, ScanLine, Inbox } from 'lucide-react';
+import { Plus, ScanLine, Inbox, ShieldCheck, LogIn, Sparkles } from 'lucide-react';
 import { HeroSection } from '@/components/dashboard/HeroSection';
 import { MetricCards } from '@/components/dashboard/MetricCards';
 import { CategoryFilterBar } from '@/components/dashboard/CategoryFilterBar';
@@ -17,15 +17,20 @@ import { AboutSection } from '@/components/about/AboutSection';
 import { Button } from '@/components/ui/button';
 import { useFilterAndSearch } from '@/hooks/useFilterAndSearch';
 import { usePagination } from '@/hooks/usePagination';
-import { useAssetStore } from '@/stores/useAssetStore';
-import { useAiScanStore } from '@/stores/useAiScanStore';
+import { useAssetApi } from '@/hooks/useAssetApi';
+import { useNotificationApi } from '@/hooks/useNotificationApi';
+import { useAuth } from '@/hooks/useAuth';
+import { useProtectedAction } from '@/hooks/useProtectedAction';
 
 export function VaultDashboardPage() {
-  const { filteredAssets, totalFilteredCount } = useFilterAndSearch();
-  const setIsAddModalOpen = useAssetStore((state) => state.setIsAddModalOpen);
-  const setIsScanModalOpen = useAiScanStore((state) => state.setIsScanModalOpen);
+  useAssetApi();
+  useNotificationApi();
 
-  // Dynamic pagination hook to cleanly handle 10, 50, 100+ products
+  const { isAuthenticated, openLoginModal, openRegisterModal } = useAuth();
+  const { filteredAssets, totalFilteredCount } = useFilterAndSearch();
+  const { handleOpenAddModal, handleOpenScanModal } = useProtectedAction();
+
+  // Dynamic pagination hook to cleanly handle products
   const pagination = usePagination(totalFilteredCount, 6);
 
   // Slice paginated assets cleanly
@@ -41,42 +46,73 @@ export function VaultDashboardPage() {
       {/* Metrics Row */}
       <MetricCards />
 
-      {/* Airbnb / App Store Style Search & Filter Toolbar */}
+      {/* Search & Filter Toolbar */}
       <CategoryFilterBar matchingCount={totalFilteredCount} />
 
-      {/* Dynamic Asset Grid */}
+      {/* Asset Grid */}
       {totalFilteredCount === 0 ? (
-        <div className="py-16 sm:py-20 text-center rounded-2xl border-2 border-dashed border-slate-200 bg-white shadow-2xs flex flex-col items-center justify-center p-6 space-y-4">
-          <div className="h-14 w-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
-            <Inbox className="h-7 w-7" />
+        <div className="py-14 sm:py-16 text-center rounded-3xl border-2 border-dashed border-slate-200 bg-white shadow-2xs flex flex-col items-center justify-center p-6 space-y-4">
+          <div className="h-16 w-16 rounded-3xl bg-cyan-50 border border-cyan-150 flex items-center justify-center text-cyan-700 shadow-2xs">
+            {isAuthenticated ? <Inbox className="h-8 w-8" /> : <ShieldCheck className="h-8 w-8" />}
           </div>
-          <div className="space-y-1 max-w-sm">
-            <h4 className="font-bold text-base text-slate-800">
-              No matching passes found
+
+          <div className="space-y-1.5 max-w-md">
+            <h4 className="font-extrabold text-base sm:text-lg text-slate-800 tracking-tight">
+              {isAuthenticated
+                ? "You haven't added any items yet"
+                : 'Sign in to save and see your bills'}
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed">
-              No registered warranties, policies, or service schedules match your current search or category filter.
+              {isAuthenticated
+                ? 'No bills, warranties, or service dates added yet. Add your first item manually or take a quick photo of your receipt.'
+                : 'Sign in with Google or email code to save your items and get timely reminders across all your devices.'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs font-semibold h-9 px-4 rounded-xl"
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" />
-              Add Manually
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="text-xs font-semibold h-9 px-4 rounded-xl shadow-xs"
-              onClick={() => setIsScanModalOpen(true)}
-            >
-              <ScanLine className="h-3.5 w-3.5 mr-1" />
-              Scan with AI
-            </Button>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            {isAuthenticated ? (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="text-xs font-bold h-10 px-5 rounded-xl shadow-xs bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                  onClick={handleOpenScanModal}
+                >
+                  <ScanLine className="h-3.5 w-3.5 mr-1.5" />
+                  Scan a Bill
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-semibold h-10 px-4 rounded-xl border-slate-200 cursor-pointer hover:bg-slate-50"
+                  onClick={handleOpenAddModal}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1.5 text-cyan-700" />
+                  Add Manually
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="text-xs font-bold h-10 px-5 rounded-xl shadow-xs bg-cyan-600 hover:bg-cyan-700 text-white cursor-pointer"
+                  onClick={openLoginModal}
+                >
+                  <LogIn className="h-3.5 w-3.5 mr-1.5" />
+                  Sign In with Google / Email
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-semibold h-10 px-4 rounded-xl border-slate-200 cursor-pointer hover:bg-slate-50"
+                  onClick={openRegisterModal}
+                >
+                  <Sparkles className="h-3.5 w-3.5 mr-1.5 text-cyan-700" />
+                  Create Free Account
+                </Button>
+              </>
+            )}
           </div>
         </div>
       ) : (
@@ -89,12 +125,12 @@ export function VaultDashboardPage() {
             </AnimatePresence>
           </div>
 
-          {/* Dynamic Pagination Controls for 100+ Products */}
+          {/* Pagination Controls */}
           <PaginationControls pagination={pagination} />
         </div>
       )}
 
-      {/* About Application Section */}
+      {/* About Section */}
       <AboutSection />
 
       {/* Dialog Modals */}

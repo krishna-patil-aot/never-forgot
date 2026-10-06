@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAssetStore } from '@/stores/useAssetStore';
 import { formatDisplayDate } from '@/lib/dateUtils';
+import { useAssetApi } from '@/hooks/useAssetApi';
 
 export function AssetDetailsModal() {
   const selectedAssetId = useAssetStore((state) => state.selectedAssetId);
@@ -28,10 +29,7 @@ export function AssetDetailsModal() {
     (state) => state.setIsDetailsModalOpen
   );
   const assets = useAssetStore((state) => state.assets);
-  const deleteAsset = useAssetStore((state) => state.deleteAsset);
-  const toggleMilestoneStatus = useAssetStore(
-    (state) => state.toggleMilestoneStatus
-  );
+  const { deleteAsset: deleteAssetApi, toggleMilestone } = useAssetApi();
 
   const asset = assets.find((a) => a.id === selectedAssetId);
 
@@ -150,7 +148,7 @@ export function AssetDetailsModal() {
                   return (
                     <div
                       key={milestone.id}
-                      onClick={() => toggleMilestoneStatus(asset.id, milestone.id)}
+                      onClick={() => void toggleMilestone(asset.id, milestone.id)}
                       className={`flex items-start justify-between p-3 rounded-xl border transition-all cursor-pointer select-none ${
                         isDone
                           ? 'bg-emerald-50/70 border-emerald-200'
@@ -242,7 +240,7 @@ export function AssetDetailsModal() {
             size="sm"
             className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5"
             onClick={() => {
-              deleteAsset(asset.id);
+              void deleteAssetApi(asset.id);
               setIsDetailsModalOpen(false);
             }}
           >

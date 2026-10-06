@@ -1,73 +1,83 @@
 'use client';
 
 import { create } from 'zustand';
-import { AuthMode, AuthStep, IUserProfile } from '@/types/auth.types';
+import { AuthMode, AuthTab, IUserProfile } from '@/types/auth.types';
 
 interface AuthState {
   user: IUserProfile | null;
-  authStep: AuthStep;
+  isLoadingSession: boolean;
+  activeTab: AuthTab;
   authMode: AuthMode;
-  identifier: string; // email or phone number
+  identifier: string; // email address
   otpCode: string;
   isAuthModalOpen: boolean;
+  isProfileModalOpen: boolean;
 
-  setAuthStep: (step: AuthStep) => void;
+  setUser: (user: IUserProfile | null) => void;
+  setIsLoadingSession: (loading: boolean) => void;
+  setActiveTab: (tab: AuthTab) => void;
   setAuthMode: (mode: AuthMode) => void;
   setIdentifier: (identifier: string) => void;
   setOtpCode: (code: string) => void;
   setIsAuthModalOpen: (open: boolean) => void;
-  loginAsMockUser: () => void;
+  setIsProfileModalOpen: (open: boolean) => void;
+  openLoginModal: () => void;
+  openRegisterModal: () => void;
+  openForgotPasswordModal: () => void;
   logout: () => void;
-  updateProfile: (profile: Partial<IUserProfile>) => void;
+  updateProfileState: (profile: Partial<IUserProfile>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: {
-    id: 'user-default',
-    email: 'krishna.patil@example.com',
-    fullName: 'Krishna Patil',
-    phone: '+91 98765 43210',
-    role: 'user',
-    isProfileComplete: true,
-    notificationEmailEnabled: true,
-    notificationInAppEnabled: true,
-  },
-  authStep: 'authenticated',
-  authMode: 'email',
+  user: null, // Zero static data — populated only from real live session
+  isLoadingSession: true,
+  activeTab: 'login',
+  authMode: 'password',
   identifier: '',
   otpCode: '',
   isAuthModalOpen: false,
+  isProfileModalOpen: false,
 
-  setAuthStep: (authStep) => set({ authStep }),
+  setUser: (user) => set({ user, isLoadingSession: false }),
+  setIsLoadingSession: (isLoadingSession) => set({ isLoadingSession }),
+  setActiveTab: (activeTab) => set({ activeTab }),
   setAuthMode: (authMode) => set({ authMode }),
   setIdentifier: (identifier) => set({ identifier }),
   setOtpCode: (otpCode) => set({ otpCode }),
   setIsAuthModalOpen: (isAuthModalOpen) => set({ isAuthModalOpen }),
+  setIsProfileModalOpen: (isProfileModalOpen) => set({ isProfileModalOpen }),
 
-  loginAsMockUser: () =>
+  openLoginModal: () =>
     set({
-      user: {
-        id: 'user-default',
-        email: 'krishna.patil@example.com',
-        fullName: 'Krishna Patil',
-        role: 'user',
-        isProfileComplete: true,
-        notificationEmailEnabled: true,
-        notificationInAppEnabled: true,
-      },
-      authStep: 'authenticated',
-      isAuthModalOpen: false,
+      activeTab: 'login',
+      isAuthModalOpen: true,
+      otpCode: '',
+    }),
+
+  openRegisterModal: () =>
+    set({
+      activeTab: 'register',
+      isAuthModalOpen: true,
+      otpCode: '',
+    }),
+
+  openForgotPasswordModal: () =>
+    set({
+      activeTab: 'forgot_password',
+      isAuthModalOpen: true,
+      otpCode: '',
     }),
 
   logout: () =>
     set({
       user: null,
-      authStep: 'identifier_input',
       identifier: '',
       otpCode: '',
+      isAuthModalOpen: false,
+      isProfileModalOpen: false,
     }),
 
-  updateProfile: (updated) =>
+  updateProfileState: (updated) =>
     set((state) => ({
       user: state.user ? { ...state.user, ...updated } : null,
     })),

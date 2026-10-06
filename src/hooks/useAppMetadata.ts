@@ -6,7 +6,7 @@ import { IAppMetadata } from '@/types/about.types';
 const defaultAppMetadata: IAppMetadata = {
   title: 'NeverForgot',
   shortDescription:
-    'Universal bill, warranty, and insurance expiry vault built so you never forget your payment dates, renewal deadlines, or free warranty claims.',
+    'A simple and easy way to keep your bills, warranties, bike free service schedules, and insurance renewal dates in one safe place so you never miss a deadline or lose money.',
   version: 'v1.0.0',
   releaseYear: '2026',
   owner: {
@@ -19,8 +19,9 @@ const defaultAppMetadata: IAppMetadata = {
     'TypeScript',
     'Tailwind CSS',
     'Shadcn UI',
+    'React Hook Form',
     'Zustand',
-    'Date-fns',
+    'Prisma',
   ],
 };
 

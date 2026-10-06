@@ -37,6 +37,8 @@ export function AiReviewModal() {
     updateExtractedField,
     handleConfirmAndSave,
     resetScan,
+    handleNonNegativeKeyDown,
+    handlePriceChange,
   } = useInvoiceScanner();
 
   if (!extractedData) return null;
@@ -108,8 +110,8 @@ export function AiReviewModal() {
         </DialogHeader>
 
         {/* AI Insight Pill */}
-        <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200/80 text-xs text-blue-900 flex items-start gap-2">
-          <Sparkles className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+        <div className="p-3 rounded-xl bg-cyan-50/80 border border-cyan-200/80 text-xs text-cyan-950 flex items-start gap-2">
+          <Sparkles className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
           <p className="leading-relaxed">{extractedData.rawSummary}</p>
         </div>
 
@@ -192,13 +194,11 @@ export function AiReviewModal() {
             <Label>Purchase Price / Premium (₹)</Label>
             <Input
               type="number"
-              value={extractedData.price || ''}
-              onChange={(e) =>
-                updateExtractedField(
-                  'price',
-                  e.target.value ? Number(e.target.value) : null
-                )
-              }
+              min="0"
+              step="any"
+              value={extractedData.price ?? ''}
+              onKeyDown={handleNonNegativeKeyDown}
+              onChange={(e) => handlePriceChange(e.target.value)}
               placeholder="e.g. 50000"
               className="text-sm"
             />
@@ -227,10 +227,10 @@ export function AiReviewModal() {
           </div>
 
           {/* Expiry Date */}
-          <div className="sm:col-span-2 space-y-1.5 p-3 rounded-xl bg-blue-50/50 border border-blue-200/70">
+          <div className="sm:col-span-2 space-y-1.5 p-3 rounded-xl bg-cyan-50/60 border border-cyan-200/70">
             <div className="flex justify-between items-center">
-              <Label className="text-blue-700 font-semibold">Calculated Expiry / Renewal Date</Label>
-              <Badge variant="cyan" className="text-[10px]">
+              <Label className="text-cyan-800 font-semibold">Calculated Expiry / Renewal Date</Label>
+              <Badge variant="cyan" className="text-[10px] bg-cyan-100 text-cyan-800 border-cyan-200">
                 Auto Calculated
               </Badge>
             </div>
@@ -261,13 +261,13 @@ export function AiReviewModal() {
 
           <Button
             type="button"
-            variant="glow"
+            variant="default"
             size="sm"
-            className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white shadow-xs"
             onClick={handleConfirmAndSave}
           >
             <CheckCircle className="h-4 w-4" />
-            <span>Confirm & Save to Vault</span>
+            <span>Confirm & Save Item</span>
           </Button>
         </DialogFooter>
       </DialogContent>

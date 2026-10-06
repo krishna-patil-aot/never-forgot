@@ -1,0 +1,132 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                       String         @id @default(cuid())
+  email                    String         @unique
+  fullName                 String
+  passwordHash             String?
+  phone                    String?
+  role                     String         @default("user") // "user" | "admin"
+  authProvider             String         @default("credentials") // "credentials" | "google" | "otp"
+  avatarUrl                String?
+  emailVerified            Boolean        @default(false)
+  isProfileComplete        Boolean        @default(true)
+  notificationEmailEnabled Boolean        @default(true)
+  notificationInAppEnabled Boolean        @default(true)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  assets                   Asset[]
+  notifications            Notification[]
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  purpose   String   // "login" | "reset_password" | "register"
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email, purpose])
+}
+
+model Asset {
+  id                  String             @id @default(cuid())
+  userId              String
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String
+  providerOrBrand     String
+  category            String // "electronics" | "vehicle" | "health_insurance" | "life_insurance" | "home_amc" | "personal_doc"
+  identifierNumber    String?
+  startDate           DateTime
+  expiryOrRenewalDate DateTime
+  validityMonths      Int
+  documentUrl         String?
+  documentName        String?
+  price               Float?
+  status              String // "active" | "expiring_soon" | "expired"
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  serviceMilestones   ServiceMilestone[]
+  policyDetails       PolicyDetail?
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@index([expiryOrRenewalDate])
+}
+
+model ServiceMilestone {
+  id        String   @id @default(cuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  title     String
+  dueDate   DateTime
+  isFree    Boolean  @default(true)
+  status    String   @default("pending") // "pending" | "completed" | "missed"
+  cost      Float?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([assetId])
+  @@index([dueDate])
+}
+
+model PolicyDetail {
+  id                  String   @id @default(cuid())
+  assetId             String   @unique
+  asset               Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  policyNumber        String
+  sumInsured          Float?
+  premiumAmount       Float
+  premiumDueDate      DateTime
+  tpaHelpline         String?
+  cashlessHospitalUrl String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([assetId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assetId   String?
+  title     String
+  message   String
+  category  String
+  type      String // "expiry_warning_30d" | "expiry_warning_7d" | "milestone_due" | "policy_renewal" | "system"
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  link      String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model AiAuditLog {
+  id               String   @id @default(cuid())
+  documentName     String
+  detectedCategory String
+  confidence       Float
+  status           String   @default("accurate") // "accurate" | "corrected_by_user" | "failed"
+  originalTitle    String
+  correctedTitle   String?
+  rawSummary       String?
+  processingEngine String   @default("smart-heuristic-ocr")
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+}

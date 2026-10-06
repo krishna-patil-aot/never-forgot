@@ -56,3 +56,19 @@ export interface IAssetFilter {
   searchQuery: string;
   sortBy: SortOption;
 }
+
+export interface IAssetFormData {
+  title: string;
+  providerOrBrand: string;
+  category: AssetCategory;
+  identifierNumber?: string;
+  startDate: string;
+  validityMonths: number;
+  expiryOrRenewalDate: string;
+  price?: number;
+  notes?: string;
+  policyNumber?: string;
+  sumInsured?: number;
+  premiumAmount?: number;
+  tpaHelpline?: string;
+}

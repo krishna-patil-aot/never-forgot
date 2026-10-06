@@ -1,86 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useCallback } from 'react';
-import { useAiScanStore } from '@/stores/useAiScanStore';
-import { useAssetStore } from '@/stores/useAssetStore';
+import { useEffect, useCallback } from "react";
+import { useAiScanStore } from "@/stores/useAiScanStore";
+import { useAssetStore } from "@/stores/useAssetStore";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { IScanPayload } from "@/types/ai.types";
+import { IUniversalAsset, IServiceMilestone } from "@/types/asset.types";
 import {
-  IAiExtractionResult,
-  IScanPayload,
-} from '@/types/ai.types';
-import {
-  ExpiryStatus,
-  IServiceMilestone,
-  IUniversalAsset,
-} from '@/types/asset.types';
-
-// Diverse AI extraction templates simulating real-world multimodal vision output
-const AI_SIMULATED_TEMPLATES: IAiExtractionResult[] = [
-  {
-    title: 'Samsung Galaxy S24 Ultra (512GB - Titanium Gray)',
-    providerOrBrand: 'Samsung Electronics',
-    category: 'electronics',
-    identifierNumber: 'IMEI: 359182740192837',
-    startDate: '2026-03-10',
-    validityMonths: 12,
-    expiryOrRenewalDate: '2027-03-10',
-    price: 129999,
-    suggestedMilestones: null,
-    policyDetails: null,
-    confidenceScore: 97.4,
-    rawSummary: 'Extracted from Amazon India Tax Invoice #INV-2026-88192. 1-Year Manufacturer Warranty detected.',
-  },
-  {
-    title: 'TVS Raider 125 (Fi Wicked Black)',
-    providerOrBrand: 'TVS Motor Company',
-    category: 'vehicle',
-    identifierNumber: 'Chassis: MD625AR76P2190',
-    startDate: '2026-08-01',
-    validityMonths: 60,
-    expiryOrRenewalDate: '2031-08-01',
-    price: 98500,
-    suggestedMilestones: [
-      {
-        title: '1st Free Service (500km / 30 Days)',
-        dueDate: '2026-09-01T00:00:00.000Z',
-        isFree: true,
-      },
-      {
-        title: '2nd Free Service (3,000km / 90 Days)',
-        dueDate: '2026-11-01T00:00:00.000Z',
-        isFree: true,
-      },
-      {
-        title: '3rd Free Service (6,000km / 180 Days)',
-        dueDate: '2027-02-01T00:00:00.000Z',
-        isFree: true,
-      },
-    ],
-    policyDetails: null,
-    confidenceScore: 96.1,
-    rawSummary: 'Vehicle Delivery Invoice parsed. 5-year standard engine warranty & 3 free service coupons extracted.',
-  },
-  {
-    title: 'HDFC ERGO Optima Secure (Health Insurance)',
-    providerOrBrand: 'HDFC ERGO General Insurance',
-    category: 'health_insurance',
-    identifierNumber: 'Policy No: 2805-2009-8472-00',
-    startDate: '2026-01-15',
-    validityMonths: 12,
-    expiryOrRenewalDate: '2027-01-14',
-    price: 21500,
-    suggestedMilestones: null,
-    policyDetails: {
-      policyNumber: '2805-2009-8472-00',
-      sumInsured: 1000000,
-      premiumAmount: 21500,
-      premiumDueDate: '2027-01-14T00:00:00.000Z',
-      tpaHelpline: '1800-2666-400',
-      cashlessHospitalUrl: 'https://hdfcergo.com/cashless-hospitals',
-    },
-    confidenceScore: 98.8,
-    rawSummary: 'Health Insurance Policy Schedule extracted. Annual renewal due on Jan 14, 2027. Sum insured: ₹10 Lakhs.',
-  },
-];
+  IApiResponse,
+  IScanDocumentRequest,
+  IScanDocumentResult,
+  ICreateAssetDto,
+} from "@/types/api.types";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export function useInvoiceScanner() {
   const {
@@ -91,6 +23,8 @@ export function useInvoiceScanner() {
     isScanModalOpen,
     isReviewModalOpen,
     errorMessage,
+    isDragOver,
+    setIsDragOver,
     setIsScanModalOpen,
     setIsReviewModalOpen,
     startScan,
@@ -102,18 +36,31 @@ export function useInvoiceScanner() {
   } = useAiScanStore();
 
   const addAsset = useAssetStore((state) => state.addAsset);
+  const user = useAuthStore((state) => state.user);
+  const openLoginModal = useAuthStore((state) => state.openLoginModal);
 
-  // Process uploaded or pasted file
+  // Process uploaded or pasted file via backend /api/scan route
   const processFile = useCallback(
     (file: File) => {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      if (!user) {
+        setIsScanModalOpen(false);
+        openLoginModal();
+        return;
+      }
+
+      const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+      ];
       if (!allowedTypes.includes(file.type)) {
-        setScanError('Please upload an image (JPG, PNG, WebP) or PDF invoice.');
+        setScanError("Please upload an image (JPG, PNG, WebP) or PDF file.");
         return;
       }
 
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const dataUrl = e.target?.result as string | undefined;
         const payload: IScanPayload = {
           fileName: file.name,
@@ -122,52 +69,96 @@ export function useInvoiceScanner() {
           dataUrl,
         };
 
+        // Upload to Cloudinary CDN in parallel
+        void uploadToCloudinary(file, file.name).then((cloudRes) => {
+          if (cloudRes?.secureUrl) {
+            payload.cloudinaryUrl = cloudRes.secureUrl;
+          }
+        });
+
         startScan(payload);
 
-        // Multi-stage visual laser-scan simulation
-        setTimeout(() => {
-          setScanningProgress('🔍 Analyzing image and recognizing text (OCR)...');
-        }, 800);
+        // Progress micro-steps
+        setScanningProgress("🔍 Analyzing image and recognizing text (OCR)...");
 
         setTimeout(() => {
-          setScanningProgress('✨ Extracting product name, dates, and identifier numbers...');
-        }, 1800);
+          setScanningProgress(
+            "✨ Extracting product name, dates, and identifier numbers...",
+          );
+        }, 600);
 
         setTimeout(() => {
-          setScanningProgress('🤖 Classifying category & calculating expiry timeline...');
-        }, 2800);
+          setScanningProgress(
+            "🤖 Classifying category & calculating expiry timeline...",
+          );
+        }, 1200);
 
-        setTimeout(() => {
-          // Pick a relevant template based on file name or rotate
-          let matched = AI_SIMULATED_TEMPLATES[0];
-          const nameLower = file.name.toLowerCase();
-          if (nameLower.includes('bike') || nameLower.includes('vehicle') || nameLower.includes('tvs')) {
-            matched = AI_SIMULATED_TEMPLATES[1];
-          } else if (nameLower.includes('health') || nameLower.includes('policy') || nameLower.includes('insurance')) {
-            matched = AI_SIMULATED_TEMPLATES[2];
-          } else {
-            // Pick based on random index for realistic variety
-            const randomIndex = Math.floor(Math.random() * AI_SIMULATED_TEMPLATES.length);
-            matched = AI_SIMULATED_TEMPLATES[randomIndex];
+        try {
+          const scanReq: IScanDocumentRequest = {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            dataUrl,
+          };
+
+          const res = await fetch("/api/scan", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(scanReq),
+          });
+
+          if (!res.ok) {
+            throw new Error(`Server returned HTTP ${res.status}`);
           }
 
-          setScanSuccess({ ...matched });
-          setIsScanModalOpen(false);
-          setIsReviewModalOpen(true);
-        }, 3600);
+          const json: IApiResponse<IScanDocumentResult> =
+            (await res.json()) as IApiResponse<IScanDocumentResult>;
+
+          if (json.success && json.data) {
+            setScanSuccess({ ...json.data.extraction });
+            setIsScanModalOpen(false);
+            setIsReviewModalOpen(true);
+          } else {
+            throw new Error(
+              json.error || "Failed to extract document information",
+            );
+          }
+        } catch (scanErr) {
+          const msg =
+            scanErr instanceof Error ? scanErr.message : "Scan error occurred";
+          setScanError(`Scan failed: ${msg}. Please try again.`);
+        }
       };
 
       reader.readAsDataURL(file);
     },
     [
+      user,
+      openLoginModal,
       startScan,
       setScanningProgress,
       setScanSuccess,
       setScanError,
       setIsScanModalOpen,
       setIsReviewModalOpen,
-    ]
+    ],
   );
+
+  // Auto-dismiss scan and review modals if session is not authenticated
+  useEffect(() => {
+    if ((isScanModalOpen || isReviewModalOpen) && !user) {
+      setIsScanModalOpen(false);
+      setIsReviewModalOpen(false);
+      openLoginModal();
+    }
+  }, [
+    isScanModalOpen,
+    isReviewModalOpen,
+    user,
+    setIsScanModalOpen,
+    setIsReviewModalOpen,
+    openLoginModal,
+  ]);
 
   // Global paste listener (Ctrl+V)
   useEffect(() => {
@@ -175,8 +166,13 @@ export function useInvoiceScanner() {
       const items = e.clipboardData?.items;
       if (!items) return;
 
+      if (!user) {
+        openLoginModal();
+        return;
+      }
+
       for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
+        if (items[i].type.indexOf("image") !== -1) {
           const file = items[i].getAsFile();
           if (file) {
             setIsScanModalOpen(true);
@@ -187,59 +183,174 @@ export function useInvoiceScanner() {
       }
     };
 
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, [processFile, setIsScanModalOpen]);
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [processFile, setIsScanModalOpen, user, openLoginModal]);
 
-  // Confirm and save extracted asset
-  const handleConfirmAndSave = useCallback(() => {
+  const handleNonNegativeKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+        e.preventDefault();
+      }
+    },
+    []
+  );
+
+  const handlePriceChange = useCallback(
+    (value: string) => {
+      if (value === '') {
+        updateExtractedField('price', null);
+      } else {
+        const num = Number(value);
+        updateExtractedField('price', isNaN(num) ? null : Math.max(0, num));
+      }
+    },
+    [updateExtractedField]
+  );
+
+  // Confirm and persist scanned asset to backend database
+  const handleConfirmAndSave = useCallback(async () => {
     if (!extractedData) return;
 
-    // Calculate status
-    const expiryTime = new Date(extractedData.expiryOrRenewalDate).getTime();
-    const now = new Date().getTime();
-    const diffDays = Math.ceil((expiryTime - now) / (1000 * 60 * 60 * 24));
+    const safePrice =
+      extractedData.price !== undefined && extractedData.price !== null
+        ? Math.max(0, extractedData.price)
+        : undefined;
 
-    let status: ExpiryStatus = 'active';
-    if (diffDays < 0) {
-      status = 'expired';
-    } else if (diffDays <= 30) {
-      status = 'expiring_soon';
-    }
-
-    const serviceMilestones: IServiceMilestone[] | undefined =
-      extractedData.suggestedMilestones?.map((m, idx) => ({
-        id: `ms-${Date.now()}-${idx}`,
-        title: m.title,
-        dueDate: m.dueDate,
-        isFree: m.isFree,
-        status: 'pending',
-      }));
-
-    const newAsset: IUniversalAsset = {
-      id: `asset-${Date.now()}`,
-      userId: 'user-default',
+    const createDto: ICreateAssetDto = {
       title: extractedData.title,
       providerOrBrand: extractedData.providerOrBrand,
       category: extractedData.category,
       identifierNumber: extractedData.identifierNumber || undefined,
       startDate: new Date(extractedData.startDate).toISOString(),
-      expiryOrRenewalDate: new Date(extractedData.expiryOrRenewalDate).toISOString(),
+      expiryOrRenewalDate: new Date(
+        extractedData.expiryOrRenewalDate,
+      ).toISOString(),
       validityMonths: extractedData.validityMonths,
-      documentName: scanPayload?.fileName || 'scanned_invoice.pdf',
-      documentUrl: scanPayload?.dataUrl,
-      price: extractedData.price || undefined,
-      status,
-      serviceMilestones,
-      policyDetails: extractedData.policyDetails || undefined,
+      documentName: scanPayload?.fileName || "scanned_invoice.pdf",
+      documentUrl: scanPayload?.cloudinaryUrl || scanPayload?.dataUrl,
+      price: safePrice,
       notes: extractedData.rawSummary,
+      serviceMilestones: extractedData.suggestedMilestones?.map((m) => ({
+        title: m.title,
+        dueDate: m.dueDate,
+        isFree: m.isFree,
+        status: "pending",
+      })),
+      policyDetails: extractedData.policyDetails
+        ? {
+            policyNumber: extractedData.policyDetails.policyNumber,
+            sumInsured: extractedData.policyDetails.sumInsured,
+            premiumAmount: extractedData.policyDetails.premiumAmount,
+            premiumDueDate: extractedData.policyDetails.premiumDueDate,
+            tpaHelpline: extractedData.policyDetails.tpaHelpline,
+            cashlessHospitalUrl:
+              extractedData.policyDetails.cashlessHospitalUrl,
+          }
+        : undefined,
+    };
+
+    const fallbackMilestones: IServiceMilestone[] | undefined =
+      extractedData.suggestedMilestones?.map((m, idx) => ({
+        id: `ms-local-${Date.now()}-${idx}`,
+        title: m.title,
+        dueDate: m.dueDate,
+        isFree: m.isFree,
+        status: "pending",
+      }));
+
+    if (!user) {
+      setIsReviewModalOpen(false);
+      openLoginModal();
+      return;
+    }
+
+    const fallbackAsset: IUniversalAsset = {
+      id: `asset-${Date.now()}`,
+      userId: user.id,
+      title: createDto.title,
+      providerOrBrand: createDto.providerOrBrand,
+      category: createDto.category,
+      identifierNumber: createDto.identifierNumber,
+      startDate: createDto.startDate,
+      expiryOrRenewalDate: createDto.expiryOrRenewalDate,
+      validityMonths: createDto.validityMonths,
+      documentName: createDto.documentName,
+      documentUrl: createDto.documentUrl,
+      price: createDto.price,
+      status: "active",
+      notes: createDto.notes,
+      serviceMilestones: fallbackMilestones,
+      policyDetails: createDto.policyDetails,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    addAsset(newAsset);
+    try {
+      const res = await fetch("/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createDto),
+      });
+
+      if (res.ok) {
+        const json: IApiResponse<IUniversalAsset> =
+          (await res.json()) as IApiResponse<IUniversalAsset>;
+        if (json.success && json.data) {
+          addAsset(json.data);
+        } else {
+          addAsset(fallbackAsset);
+        }
+      } else {
+        addAsset(fallbackAsset);
+      }
+    } catch {
+      addAsset(fallbackAsset);
+    }
+
     resetScan();
-  }, [extractedData, scanPayload, addAsset, resetScan]);
+    setIsReviewModalOpen(false);
+  }, [
+    extractedData,
+    scanPayload,
+    addAsset,
+    resetScan,
+    setIsReviewModalOpen,
+    openLoginModal,
+    user,
+  ]);
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(true);
+    },
+    [setIsDragOver],
+  );
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragOver(false);
+  }, [setIsDragOver]);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processFile(e.dataTransfer.files[0]);
+      }
+    },
+    [setIsDragOver, processFile],
+  );
+
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        processFile(e.target.files[0]);
+      }
+    },
+    [processFile],
+  );
 
   return {
     scanStatus,
@@ -249,11 +360,18 @@ export function useInvoiceScanner() {
     isScanModalOpen,
     isReviewModalOpen,
     errorMessage,
+    isDragOver,
     setIsScanModalOpen,
     setIsReviewModalOpen,
     processFile,
     updateExtractedField,
     handleConfirmAndSave,
     resetScan,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleFileInputChange,
+    handleNonNegativeKeyDown,
+    handlePriceChange,
   };
 }

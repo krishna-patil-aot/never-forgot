@@ -68,11 +68,9 @@ export function FilterAndSortModal({
     },
     {
       id: 'health_insurance',
-      label: 'Health & Life',
+      label: 'Health Policy',
       icon: HeartHandshake,
-      count:
-        metrics.categoryBreakdown.health_insurance +
-        metrics.categoryBreakdown.life_insurance,
+      count: metrics.categoryBreakdown.health_insurance,
     },
     {
       id: 'home_amc',
@@ -82,7 +80,7 @@ export function FilterAndSortModal({
     },
     {
       id: 'personal_doc',
-      label: 'Documents',
+      label: 'Personal Docs',
       icon: FileText,
       count: metrics.categoryBreakdown.personal_doc,
     },
@@ -93,9 +91,9 @@ export function FilterAndSortModal({
     label: string;
     badgeColor: string;
   }> = [
-    { id: 'all', label: 'All Passes', badgeColor: 'bg-slate-400' },
+    { id: 'all', label: 'All Items', badgeColor: 'bg-slate-400' },
     { id: 'expiring_soon', label: 'Expiring Soon', badgeColor: 'bg-amber-500' },
-    { id: 'active', label: 'Active Only', badgeColor: 'bg-emerald-500' },
+    { id: 'active', label: 'Valid Only', badgeColor: 'bg-cyan-500' },
     { id: 'expired', label: 'Expired', badgeColor: 'bg-rose-500' },
   ];
 
@@ -104,7 +102,7 @@ export function FilterAndSortModal({
     label: string;
     subtitle: string;
   }> = [
-    { id: 'expiry_asc', label: 'Expiry: Soonest', subtitle: 'Upcoming renewals first' },
+    { id: 'expiry_asc', label: 'Expiry: Soonest', subtitle: 'Upcoming expirations first' },
     { id: 'expiry_desc', label: 'Expiry: Furthest', subtitle: 'Longest coverage first' },
     { id: 'name_asc', label: 'Name: A to Z', subtitle: 'Alphabetical order' },
     { id: 'recently_added', label: 'Recently Added', subtitle: 'Latest created items' },
@@ -115,22 +113,22 @@ export function FilterAndSortModal({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 bg-white border-border shadow-2xl">
         <DialogHeader className="pr-10 text-left space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+            <div className="h-9 w-9 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-150 flex items-center justify-center shrink-0">
               <SlidersHorizontal className="h-4.5 w-4.5" />
             </div>
             <div>
               <DialogTitle className="text-base sm:text-lg font-bold text-slate-900">
-                Filter & Sort Passes
+                Filter & Sort Items
               </DialogTitle>
               {activeFiltersCount > 0 && (
-                <span className="text-[11px] font-semibold text-blue-600">
+                <span className="text-[11px] font-semibold text-cyan-700">
                   {activeFiltersCount} active {activeFiltersCount === 1 ? 'filter' : 'filters'}
                 </span>
               )}
             </div>
           </div>
           <DialogDescription className="text-xs text-slate-500">
-            Customize which passes are displayed in your digital vault and change their order.
+            Choose which items to show and change how they are sorted.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,7 +136,7 @@ export function FilterAndSortModal({
           {/* Section 1: Categories */}
           <div className="space-y-2.5">
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-              <Layers className="h-3.5 w-3.5 text-blue-600" />
+              <Layers className="h-3.5 w-3.5 text-cyan-700" />
               <span>Category</span>
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -153,19 +151,19 @@ export function FilterAndSortModal({
                     onClick={() => setFilterCategory(cat.id)}
                     className={`h-auto w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer select-none font-normal whitespace-normal ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-2xs font-bold ring-1 ring-blue-600/30 hover:bg-blue-100/70'
+                        ? 'border-cyan-600 bg-cyan-50/80 text-cyan-900 shadow-2xs font-bold ring-1 ring-cyan-600/30 hover:bg-cyan-100/70'
                         : 'border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700 font-medium'
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
-                      <Icon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-blue-600' : 'text-slate-400'}`} />
+                      <Icon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-cyan-700' : 'text-slate-400'}`} />
                       <span className="text-xs truncate">{cat.label}</span>
                     </div>
                     <span
                       suppressHydrationWarning
                       className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold shrink-0 ml-1 ${
                         isSelected
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-cyan-600 text-white'
                           : 'bg-slate-100 text-slate-600'
                       }`}
                     >
@@ -181,7 +179,7 @@ export function FilterAndSortModal({
           <div className="space-y-2.5">
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5 text-amber-600" />
-              <span>Expiry Urgency</span>
+              <span>Expiry Status</span>
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {statuses.map((s) => {
@@ -223,7 +221,7 @@ export function FilterAndSortModal({
                     onClick={() => setSortBy(opt.id)}
                     className={`h-auto w-full flex items-center justify-between p-2.5 rounded-xl border text-left transition-all cursor-pointer select-none font-normal whitespace-normal ${
                       isSelected
-                        ? 'border-blue-600 bg-blue-50/70 text-blue-900 shadow-2xs font-bold ring-1 ring-blue-600/30 hover:bg-blue-100/70'
+                        ? 'border-cyan-600 bg-cyan-50/80 text-cyan-900 shadow-2xs font-bold ring-1 ring-cyan-600/30 hover:bg-cyan-100/70'
                         : 'border-slate-200/90 bg-white hover:bg-slate-50 text-slate-700'
                     }`}
                   >
@@ -231,7 +229,7 @@ export function FilterAndSortModal({
                       <p className="text-xs font-bold">{opt.label}</p>
                       <p className="text-[10px] text-slate-500 font-normal">{opt.subtitle}</p>
                     </div>
-                    {isSelected && <Check className="h-4 w-4 text-blue-600 shrink-0" />}
+                    {isSelected && <Check className="h-4 w-4 text-cyan-700 shrink-0" />}
                   </Button>
                 );
               })}
@@ -257,9 +255,9 @@ export function FilterAndSortModal({
             variant="default"
             size="sm"
             onClick={closeFilterSheet}
-            className="flex-1 sm:flex-initial text-xs font-bold h-10 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-xs cursor-pointer"
+            className="flex-1 sm:flex-initial text-xs font-bold h-10 px-5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white shadow-xs cursor-pointer"
           >
-            <span>Show Passes ({matchingCount})</span>
+            <span>Show Items ({matchingCount})</span>
           </Button>
         </DialogFooter>
       </DialogContent>

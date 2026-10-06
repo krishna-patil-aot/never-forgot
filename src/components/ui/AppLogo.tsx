@@ -25,9 +25,9 @@ export function AppLogo({
     >
       <defs>
         <linearGradient id="nf-app-logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2563eb" />
-          <stop offset="50%" stopColor="#4f46e5" />
-          <stop offset="100%" stopColor="#0284c7" />
+          <stop offset="0%" stopColor="#06b6d4" />
+          <stop offset="50%" stopColor="#0891b2" />
+          <stop offset="100%" stopColor="#0e7490" />
         </linearGradient>
       </defs>
       {/* Background Squircle matching favicon */}

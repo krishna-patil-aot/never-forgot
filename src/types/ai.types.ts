@@ -28,4 +28,5 @@ export interface IScanPayload {
   fileSize: number;
   fileType: string;
   dataUrl?: string;
+  cloudinaryUrl?: string;
 }

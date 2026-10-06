@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 import {
   Bell,
   CheckCheck,
@@ -8,52 +8,48 @@ import {
   Wrench,
   ShieldAlert,
   HeartHandshake,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { useNotificationStore } from '@/stores/useNotificationStore';
-import { NotificationType } from '@/types/notification.types';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { NotificationType } from "@/types/notification.types";
+import { useNotificationDrawer } from "@/hooks/useNotificationDrawer";
+
+function NotificationIcon({ type }: { type: NotificationType }) {
+  switch (type) {
+    case "warranty_expiry":
+      return <ShieldAlert className="h-4 w-4 text-amber-600" />;
+    case "service_due":
+      return <Wrench className="h-4 w-4 text-cyan-600" />;
+    case "policy_renewal":
+      return <HeartHandshake className="h-4 w-4 text-teal-600" />;
+    default:
+      return <Bell className="h-4 w-4 text-cyan-600" />;
+  }
+}
 
 export function NotificationDrawer() {
-  const notifications = useNotificationStore((state) => state.notifications);
-  const isNotificationPanelOpen = useNotificationStore(
-    (state) => state.isNotificationPanelOpen
-  );
-  const setIsNotificationPanelOpen = useNotificationStore(
-    (state) => state.setIsNotificationPanelOpen
-  );
-  const markAsRead = useNotificationStore((state) => state.markAsRead);
-  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
-
-  const getNotificationIcon = (type: NotificationType) => {
-    switch (type) {
-      case 'warranty_expiry':
-        return <ShieldAlert className="h-4 w-4 text-amber-600" />;
-      case 'service_due':
-        return <Wrench className="h-4 w-4 text-sky-600" />;
-      case 'policy_renewal':
-        return <HeartHandshake className="h-4 w-4 text-purple-600" />;
-    }
-  };
+  const {
+    notifications,
+    unreadCount,
+    isOpen,
+    setIsOpen,
+    handleMarkAsRead,
+    handleMarkAllAsRead,
+  } = useNotificationDrawer();
 
   return (
-    <Dialog
-      open={isNotificationPanelOpen}
-      onOpenChange={setIsNotificationPanelOpen}
-    >
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6 bg-white border-border shadow-2xl">
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="md:max-w-md max-h-[85vh] overflow-y-auto p-4 sm:p-6 bg-white border-border shadow-2xl">
         {/* Header with clear right padding so close button has its own space */}
         <DialogHeader className="pr-10 text-left space-y-1">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0">
+            <div className="h-9 w-9 rounded-xl bg-cyan-50 text-cyan-700 border border-cyan-150 flex items-center justify-center shrink-0">
               <Bell className="h-4.5 w-4.5" />
             </div>
             <div>
@@ -61,14 +57,14 @@ export function NotificationDrawer() {
                 Alerts & Reminders
               </DialogTitle>
               {unreadCount > 0 && (
-                <span className="text-[11px] font-semibold text-blue-600">
-                  {unreadCount} unread {unreadCount === 1 ? 'alert' : 'alerts'}
+                <span className="text-[11px] font-semibold text-cyan-700">
+                  {unreadCount} unread {unreadCount === 1 ? "alert" : "alerts"}
                 </span>
               )}
             </div>
           </div>
           <DialogDescription className="text-xs text-slate-500 pt-0.5">
-            Upcoming warranty expirations, vehicle service schedules, and renewal due dates.
+            Upcoming service dates, renewals, and expiring warranties.
           </DialogDescription>
         </DialogHeader>
 
@@ -89,21 +85,21 @@ export function NotificationDrawer() {
                 key={notif.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => markAsRead(notif.id)}
+                onClick={() => handleMarkAsRead(notif.id)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
+                  if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    markAsRead(notif.id);
+                    handleMarkAsRead(notif.id);
                   }
                 }}
                 className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer text-left select-none ${
                   notif.isRead
-                    ? 'bg-slate-50/70 border-slate-200/60 opacity-75'
-                    : 'bg-blue-50/40 border-blue-200/90 shadow-2xs hover:bg-blue-50/60'
+                    ? "bg-slate-50/70 border-slate-200/60 opacity-75"
+                    : "bg-cyan-50/40 border-cyan-200/90 shadow-2xs hover:bg-cyan-50/60"
                 }`}
               >
                 <div className="mt-0.5 p-2 rounded-xl bg-white border border-slate-200 shadow-2xs shrink-0">
-                  {getNotificationIcon(notif.type)}
+                  <NotificationIcon type={notif.type} />
                 </div>
 
                 <div className="space-y-1 min-w-0 flex-1">
@@ -112,10 +108,10 @@ export function NotificationDrawer() {
                       {notif.title}
                     </p>
                     {!notif.isRead && (
-                      <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-cyan-600 shrink-0" />
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-600 leading-relaxed">
+                  <p className="text-xs text-slate-600 leading-relaxed">
                     {notif.message}
                   </p>
                   <div className="flex items-center gap-2 pt-1 text-[10px] text-slate-500 font-semibold">
@@ -132,16 +128,16 @@ export function NotificationDrawer() {
           )}
         </div>
 
-        {/* Dedicated Single Clean Action for Mark All As Read */}
+        {/* Action for Mark All As Read */}
         {unreadCount > 0 && (
           <div className="pt-2 border-t border-slate-100">
             <Button
               variant="outline"
               size="sm"
-              onClick={markAllAsRead}
+              onClick={handleMarkAllAsRead}
               className="w-full text-xs font-bold h-9 rounded-xl border-slate-200 hover:bg-slate-50 cursor-pointer"
             >
-              <CheckCheck className="h-3.5 w-3.5 mr-1.5 text-blue-600" />
+              <CheckCheck className="h-3.5 w-3.5 mr-1.5 text-cyan-600" />
               <span>Mark all alerts as read</span>
             </Button>
           </div>

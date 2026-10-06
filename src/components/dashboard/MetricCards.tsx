@@ -18,19 +18,19 @@ export function MetricCards() {
   const stats = [
     {
       id: 'active',
-      label: 'Active Passes',
+      label: 'Active Items',
       value: `${metrics.activeCount}`,
-      badge: 'Protected',
-      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      badge: 'Valid',
+      badgeColor: 'bg-cyan-50 text-cyan-800 border-cyan-200',
       icon: ShieldCheck,
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 border border-emerald-100',
+      iconColor: 'text-cyan-700',
+      iconBg: 'bg-cyan-50 border border-cyan-150',
     },
     {
       id: 'expiring',
       label: 'Expiring Soon',
       value: `${metrics.expiringSoonCount}`,
-      badge: metrics.expiringSoonCount > 0 ? 'Action Needed' : 'All Safe',
+      badge: metrics.expiringSoonCount > 0 ? 'Needs Attention' : 'All Good',
       badgeColor:
         metrics.expiringSoonCount > 0
           ? 'bg-amber-50 text-amber-800 border-amber-300 animate-pulse'
@@ -43,27 +43,27 @@ export function MetricCards() {
       id: 'services',
       label: 'Free Services Due',
       value: `${metrics.upcomingServicesCount}`,
-      badge: 'Schedule',
-      badgeColor: 'bg-sky-50 text-sky-700 border-sky-200',
+      badge: 'Upcoming',
+      badgeColor: 'bg-teal-50 text-teal-800 border-teal-200',
       icon: Wrench,
-      iconColor: 'text-sky-600',
-      iconBg: 'bg-sky-50 border border-sky-100',
+      iconColor: 'text-teal-700',
+      iconBg: 'bg-teal-50 border border-teal-150',
     },
     {
       id: 'value',
-      label: 'Total Value Covered',
+      label: 'Total Value of Items',
       value: formattedValue,
-      badge: 'Full Cover',
-      badgeColor: 'bg-violet-50 text-violet-700 border-violet-200',
+      badge: 'Protected',
+      badgeColor: 'bg-slate-100 text-slate-700 border-slate-200',
       icon: IndianRupee,
-      iconColor: 'text-violet-600',
-      iconBg: 'bg-violet-50 border border-violet-100',
+      iconColor: 'text-slate-700',
+      iconBg: 'bg-slate-100 border border-slate-200',
     },
   ];
 
   return (
     <div className="mb-6 sm:mb-8">
-      {/* Mobile: Tactile, swipeable consumer snapshot strip */}
+      {/* Mobile: Tactile swipeable snapshot strip */}
       <div className="flex md:hidden items-center gap-3 overflow-x-auto pb-2 scrollbar-none no-scrollbar -mx-3.5 px-3.5">
         {stats.map((stat) => {
           const Icon = stat.icon;
@@ -99,7 +99,7 @@ export function MetricCards() {
         })}
       </div>
 
-      {/* Desktop / Tablet: Responsive 2-col on tablets (768-1200px) and 4-col on wide screens (1200px+) */}
+      {/* Desktop / Tablet: Responsive Grid */}
       <div className="hidden md:grid md:grid-cols-2 xl:grid-cols-4 gap-3.5 sm:gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -109,7 +109,7 @@ export function MetricCards() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: index * 0.05 }}
-              className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 hover:border-blue-300 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-3 min-w-0"
+              className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 hover:border-cyan-400 hover:shadow-md transition-all duration-200 flex flex-col justify-between space-y-3 min-w-0"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider truncate">

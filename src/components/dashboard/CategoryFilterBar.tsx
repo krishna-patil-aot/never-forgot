@@ -36,10 +36,10 @@ export function CategoryFilterBar({ matchingCount = 0 }: CategoryFilterBarProps)
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <Input
-            placeholder="Search products, brands, IMEI, registration..."
+            placeholder="Search by item name, brand, or bill number..."
             value={filter.searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-9 bg-white border-slate-200/90 text-xs sm:text-sm h-11 rounded-2xl shadow-2xs w-full focus-visible:ring-2 focus-visible:ring-blue-500/20"
+            className="pl-10 pr-9 bg-white border-slate-200/90 text-xs sm:text-sm h-11 rounded-2xl shadow-2xs w-full focus-visible:ring-2 focus-visible:ring-cyan-500/20"
           />
           {filter.searchQuery && (
             <Button
@@ -56,14 +56,14 @@ export function CategoryFilterBar({ matchingCount = 0 }: CategoryFilterBarProps)
           )}
         </div>
 
-        {/* Airbnb Style Filter & Sort Trigger Button */}
+        {/* Filter & Sort Trigger Button */}
         <Button
           type="button"
           variant="outline"
           onClick={openFilterSheet}
           className={`h-11 px-3.5 sm:px-4 rounded-2xl border text-xs font-bold transition-all shadow-2xs shrink-0 cursor-pointer flex items-center gap-2 ${
             activeFiltersCount > 0
-              ? 'border-blue-600 bg-blue-50/70 text-blue-900 ring-1 ring-blue-600/30 hover:bg-blue-100/70'
+              ? 'border-cyan-600 bg-cyan-50/80 text-cyan-900 ring-1 ring-cyan-600/30 hover:bg-cyan-100/70'
               : 'border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900'
           }`}
           aria-label="Open filters and sort options"
@@ -74,7 +74,7 @@ export function CategoryFilterBar({ matchingCount = 0 }: CategoryFilterBarProps)
           {activeFiltersCount > 0 && (
             <span
               suppressHydrationWarning
-              className="h-5 min-w-[1.25rem] px-1.5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center leading-none"
+              className="h-5 min-w-[1.25rem] px-1.5 rounded-full bg-cyan-600 text-white text-[10px] font-bold flex items-center justify-center leading-none"
             >
               {activeFiltersCount}
             </span>

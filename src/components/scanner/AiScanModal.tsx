@@ -29,28 +29,16 @@ export function AiScanModal() {
     scanProgressText,
     isScanModalOpen,
     errorMessage,
+    isDragOver,
     setIsScanModalOpen,
-    processFile,
     resetScan,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleFileInputChange,
   } = useInvoiceScanner();
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const [isDragOver, setIsDragOver] = React.useState(false);
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      processFile(e.target.files[0]);
-    }
-  };
-
   const isScanning = scanStatus === 'uploading' || scanStatus === 'scanning';
 
   return (
@@ -66,15 +54,15 @@ export function AiScanModal() {
       <DialogContent className="sm:max-w-lg bg-white border-border shadow-2xl max-h-[88vh] sm:max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-cyan-600 to-teal-600 flex items-center justify-center shadow-xs shrink-0 mt-0.5">
               <ScanLine className="h-4 w-4 text-white" />
             </div>
             <div className="min-w-0">
               <DialogTitle className="text-base sm:text-lg font-bold leading-snug break-words">
-                AI Invoice & Policy Scanner
+                Scan Bill or Receipt
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 leading-normal">
-                Paste or upload any purchase invoice, warranty card, or insurance policy.
+                Upload a photo or PDF of your bill. We will automatically find the product name, date, and warranty.
               </DialogDescription>
             </div>
           </div>
@@ -88,7 +76,7 @@ export function AiScanModal() {
           </div>
         )}
 
-        {/* Scanning State with Framer Motion Laser Effect */}
+        {/* Scanning State with Laser Effect */}
         <AnimatePresence mode="wait">
           {isScanning ? (
             <motion.div
@@ -96,28 +84,28 @@ export function AiScanModal() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="relative my-4 p-8 rounded-2xl border border-blue-200 bg-gradient-to-b from-blue-50/80 via-white to-slate-50 flex flex-col items-center justify-center min-h-[260px] overflow-hidden shadow-inner"
+              className="relative my-4 p-8 rounded-2xl border border-cyan-200 bg-gradient-to-b from-cyan-50/70 via-white to-slate-50 flex flex-col items-center justify-center min-h-[260px] overflow-hidden shadow-inner"
             >
               {/* Animated Laser Scanning Beam */}
               <motion.div
-                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_12px_#3b82f6] z-20"
+                className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-500 to-transparent shadow-[0_0_12px_#06b6d4] z-20"
                 animate={{ top: ['5%', '90%', '5%'] }}
                 transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
               />
 
               {/* Document Icon Placeholder in Scanning Mode */}
               <div className="relative z-10 flex flex-col items-center space-y-4">
-                <div className="h-16 w-16 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center shadow-xs">
-                  <FileText className="h-8 w-8 text-primary animate-pulse" />
+                <div className="h-16 w-16 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center shadow-xs">
+                  <FileText className="h-8 w-8 text-cyan-600 animate-pulse" />
                 </div>
 
                 <div className="text-center space-y-1">
                   <div className="flex items-center justify-center gap-1.5 text-sm font-semibold text-foreground">
-                    <Sparkles className="h-4 w-4 text-blue-600 animate-spin" />
-                    <span>Multimodal Vision OCR</span>
+                    <Sparkles className="h-4 w-4 text-cyan-600 animate-spin" />
+                    <span>Reading your document</span>
                   </div>
-                  <p className="text-xs text-blue-700 font-semibold animate-pulse">
-                    {scanProgressText || 'Extracting invoice data...'}
+                  <p className="text-xs text-cyan-700 font-semibold animate-pulse">
+                    {scanProgressText || 'Extracting bill details...'}
                   </p>
                   <p className="text-[11px] text-muted-foreground pt-1">
                     {scanPayload?.fileName} ({(Number(scanPayload?.fileSize || 0) / 1024).toFixed(0)} KB)
@@ -128,17 +116,14 @@ export function AiScanModal() {
           ) : (
             /* Upload / Dropzone State */
             <div
-              onDragOver={(e) => {
-                e.preventDefault();
-                setIsDragOver(true);
-              }}
-              onDragLeave={() => setIsDragOver(false)}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`my-3 p-4 sm:p-8 border-2 border-dashed rounded-2xl transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-3 ${
                 isDragOver
-                  ? 'border-primary bg-blue-50/60 scale-[1.01]'
-                  : 'border-slate-300 hover:border-primary/60 bg-slate-50/70 hover:bg-blue-50/30'
+                  ? 'border-cyan-500 bg-cyan-50/70 scale-[1.01]'
+                  : 'border-slate-300 hover:border-cyan-500/70 bg-slate-50/70 hover:bg-cyan-50/30'
               }`}
             >
               <Input
@@ -146,26 +131,26 @@ export function AiScanModal() {
                 type="file"
                 accept="image/*,application/pdf"
                 className="hidden"
-                onChange={handleFileChange}
+                onChange={handleFileInputChange}
               />
 
               <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-white flex items-center justify-center border border-slate-200 shadow-xs">
-                <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
+                <UploadCloud className="h-6 w-6 sm:h-7 sm:w-7 text-cyan-600" />
               </div>
 
               <div className="space-y-1">
                 <p className="text-xs sm:text-sm font-semibold text-foreground">
-                  Drag & drop invoice here, or <span className="text-primary underline">browse</span>
+                  Drag & drop your bill here, or <span className="text-cyan-700 underline font-bold">browse</span>
                 </p>
                 <p className="text-[11px] sm:text-xs text-muted-foreground">
-                  Supports JPG, PNG, WebP, and PDF up to 10MB
+                  Supports JPG, PNG, WebP, or PDF up to 10MB
                 </p>
               </div>
 
-              {/* Keyboard Paste Pro Tip */}
+              {/* Keyboard Paste Tip */}
               <div className="pt-1 flex items-center justify-center">
                 <Badge variant="outline" className="text-[10px] py-1 px-2.5 bg-white text-slate-600 border-slate-200 whitespace-normal text-center leading-tight">
-                  Tip: Press <kbd className="font-mono font-bold text-foreground">Ctrl + V</kbd> anywhere to paste screenshot
+                  Tip: Press <kbd className="font-mono font-bold text-foreground">Ctrl + V</kbd> to paste a screenshot
                 </Badge>
               </div>
             </div>
@@ -188,12 +173,12 @@ export function AiScanModal() {
             type="button"
             variant="default"
             size="sm"
-            className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5"
+            className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white"
             onClick={() => fileInputRef.current?.click()}
             disabled={isScanning}
           >
             <Camera className="h-3.5 w-3.5 text-white" />
-            <span>Select File / Camera</span>
+            <span>Select File / Photo</span>
           </Button>
         </div>
       </DialogContent>

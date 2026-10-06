@@ -15,8 +15,10 @@ interface AiScanState {
   isScanModalOpen: boolean;
   isReviewModalOpen: boolean;
   errorMessage: string | null;
+  isDragOver: boolean;
 
   // Actions
+  setIsDragOver: (isDragOver: boolean) => void;
   setIsScanModalOpen: (open: boolean) => void;
   setIsReviewModalOpen: (open: boolean) => void;
   startScan: (payload: IScanPayload) => void;
@@ -38,7 +40,9 @@ export const useAiScanStore = create<AiScanState>((set) => ({
   isScanModalOpen: false,
   isReviewModalOpen: false,
   errorMessage: null,
+  isDragOver: false,
 
+  setIsDragOver: (isDragOver) => set({ isDragOver }),
   setIsScanModalOpen: (isScanModalOpen) => set({ isScanModalOpen }),
   setIsReviewModalOpen: (isReviewModalOpen) => set({ isReviewModalOpen }),
 

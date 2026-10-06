@@ -3,11 +3,7 @@
 import * as React from 'react';
 import { motion } from 'framer-motion';
 import {
-  ShieldCheck,
   Wrench,
-  HeartHandshake,
-  CheckCircle2,
-  FileText,
   Clock,
   PhoneCall,
   Trash2,
@@ -17,92 +13,25 @@ import {
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { useAssetStore } from '@/stores/useAssetStore';
-import { AssetCategory, IUniversalAsset } from '@/types/asset.types';
+import { IUniversalAsset } from '@/types/asset.types';
 import { formatDisplayDate } from '@/lib/dateUtils';
+import { useAssetCard } from '@/hooks/useAssetCard';
 
 interface AssetCardProps {
   asset: IUniversalAsset;
 }
 
 export function AssetCard({ asset }: AssetCardProps) {
-  const setSelectedAssetId = useAssetStore((state) => state.setSelectedAssetId);
-  const setIsDetailsModalOpen = useAssetStore(
-    (state) => state.setIsDetailsModalOpen
-  );
-  const deleteAsset = useAssetStore((state) => state.deleteAsset);
+  const {
+    percentageElapsed,
+    diffDays,
+    catDetails,
+    handleOpenDetails,
+    handleDelete,
+  } = useAssetCard(asset);
 
-  // Calculate percentage of elapsed warranty time
-  const startDate = new Date(asset.startDate).getTime();
-  const expiryDate = new Date(asset.expiryOrRenewalDate).getTime();
-  const now = new Date().getTime();
-  const totalDuration = Math.max(1, expiryDate - startDate);
-  const elapsed = Math.max(0, now - startDate);
-  const percentageElapsed = Math.min(100, Math.round((elapsed / totalDuration) * 100));
-
-  const diffDays = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-
-  // Category visual themes inspired by digital wallet passes (Apple Wallet / Cred)
-  const getCategoryDetails = (category: AssetCategory) => {
-    switch (category) {
-      case 'electronics':
-        return {
-          icon: ShieldCheck,
-          label: 'Electronics',
-          gradientBar: 'from-blue-600 via-indigo-600 to-sky-500',
-          accentText: 'text-blue-600',
-          accentBg: 'bg-blue-50 text-blue-700 border-blue-200/80',
-          chipBg: 'bg-blue-50 text-blue-700',
-          passType: 'Tech Warranty Card',
-        };
-      case 'vehicle':
-        return {
-          icon: Wrench,
-          label: 'Vehicle',
-          gradientBar: 'from-amber-500 via-orange-500 to-yellow-500',
-          accentText: 'text-amber-600',
-          accentBg: 'bg-amber-50 text-amber-800 border-amber-200/80',
-          chipBg: 'bg-amber-50 text-amber-700',
-          passType: 'Vehicle Service Pass',
-        };
-      case 'health_insurance':
-      case 'life_insurance':
-        return {
-          icon: HeartHandshake,
-          label: 'Insurance',
-          gradientBar: 'from-purple-600 via-pink-600 to-indigo-600',
-          accentText: 'text-purple-600',
-          accentBg: 'bg-purple-50 text-purple-800 border-purple-200/80',
-          chipBg: 'bg-purple-50 text-purple-700',
-          passType: 'Health Policy Pass',
-        };
-      case 'home_amc':
-        return {
-          icon: CheckCircle2,
-          label: 'Home AMC',
-          gradientBar: 'from-teal-500 via-emerald-500 to-cyan-500',
-          accentText: 'text-teal-600',
-          accentBg: 'bg-teal-50 text-teal-800 border-teal-200/80',
-          chipBg: 'bg-teal-50 text-teal-700',
-          passType: 'Home AMC Pass',
-        };
-      default:
-        return {
-          icon: FileText,
-          label: 'Document',
-          gradientBar: 'from-slate-500 via-slate-600 to-blue-500',
-          accentText: 'text-slate-600',
-          accentBg: 'bg-slate-100 text-slate-800 border-slate-200',
-          chipBg: 'bg-slate-100 text-slate-700',
-          passType: 'Registered Document',
-        };
-    }
-  };
-
-  const catDetails = getCategoryDetails(asset.category);
   const CategoryIcon = catDetails.icon;
 
-  // Status visual badge (Consumer-friendly text and styling)
   const renderStatusBadge = () => {
     if (diffDays < 0) {
       return (
@@ -129,24 +58,18 @@ export function AssetCard({ asset }: AssetCardProps) {
     return (
       <span
         suppressHydrationWarning
-        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs shrink-0 whitespace-nowrap"
+        className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full bg-cyan-50 text-cyan-800 border border-cyan-200 shadow-2xs shrink-0 whitespace-nowrap"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span className="h-1.5 w-1.5 rounded-full bg-cyan-500" />
         Active ({diffDays}d left)
       </span>
     );
   };
 
-  // Progress color based on urgency
   const getIndicatorColor = () => {
     if (diffDays < 0) return 'bg-rose-500';
     if (diffDays <= 30) return 'bg-amber-500';
-    return 'bg-emerald-500';
-  };
-
-  const handleCardClick = () => {
-    setSelectedAssetId(asset.id);
-    setIsDetailsModalOpen(true);
+    return 'bg-cyan-500';
   };
 
   return (
@@ -158,18 +81,17 @@ export function AssetCard({ asset }: AssetCardProps) {
       transition={{ duration: 0.2 }}
       className="h-full flex"
     >
-      {/* Consumer Card Container: Tactile, Tap-friendly Digital Wallet Pass */}
       <div
         role="button"
         tabIndex={0}
-        onClick={handleCardClick}
+        onClick={handleOpenDetails}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            handleCardClick();
+            handleOpenDetails();
           }
         }}
-        className="group relative flex flex-col justify-between w-full h-full rounded-2xl sm:rounded-3xl bg-white border border-slate-200/90 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.08)] hover:border-blue-300/80 transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.99] text-left select-none"
+        className="group relative flex flex-col justify-between w-full h-full rounded-2xl sm:rounded-3xl bg-white border border-slate-200/90 shadow-[0_2px_10px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.08)] hover:border-cyan-300/80 transition-all duration-200 overflow-hidden cursor-pointer active:scale-[0.99] text-left select-none"
       >
         {/* Top Digital Card Color Accent Strip */}
         <div className={`h-1.5 w-full bg-gradient-to-r ${catDetails.gradientBar}`} />
@@ -204,8 +126,8 @@ export function AssetCard({ asset }: AssetCardProps) {
               {renderStatusBadge()}
             </div>
 
-            {/* Product Title: Bold, readable, wraps naturally with no awkward clipping */}
-            <h3 className="font-bold text-base sm:text-lg text-slate-900 group-hover:text-blue-600 transition-colors leading-snug line-clamp-2">
+            {/* Product Title */}
+            <h3 className="font-bold text-base sm:text-lg text-slate-900 group-hover:text-cyan-700 transition-colors leading-snug line-clamp-2">
               {asset.title}
             </h3>
           </div>
@@ -296,10 +218,10 @@ export function AssetCard({ asset }: AssetCardProps) {
             {/* Document Receipt Attachment Pill */}
             {asset.documentName && (
               <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100/70 px-3 py-1.5 rounded-xl border border-slate-200/60 min-w-0">
-                <FileSpreadsheet className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-700 shrink-0" />
                 <span className="truncate flex-1 font-medium min-w-0">{asset.documentName}</span>
-                <span className="text-[10px] text-emerald-600 font-bold shrink-0 whitespace-nowrap">
-                  Verified Bill
+                <span className="text-[10px] text-cyan-700 font-bold shrink-0 whitespace-nowrap">
+                  Receipt Attached
                 </span>
               </div>
             )}
@@ -308,8 +230,8 @@ export function AssetCard({ asset }: AssetCardProps) {
 
         {/* Card Footer: Quick Pass Actions */}
         <div className="px-4 sm:px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 group-hover:text-blue-700 whitespace-nowrap">
-            <span>Open Digital Pass</span>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-700 group-hover:text-cyan-800 whitespace-nowrap">
+            <span>View Details</span>
             <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
           </div>
 
@@ -317,13 +239,10 @@ export function AssetCard({ asset }: AssetCardProps) {
             type="button"
             variant="ghost"
             size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteAsset(asset.id);
-            }}
+            onClick={handleDelete}
             className="h-8 w-8 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-            title="Remove from vault"
-            aria-label="Remove item"
+            title="Delete item"
+            aria-label="Delete item"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
