@@ -4,11 +4,8 @@ import { useCallback, useEffect } from 'react';
 import { useGoogleAuthStore } from '@/stores/useGoogleAuthStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {
-  IGoogleCredentialResponse,
-  IGoogleDecodedToken,
   IGoogleOAuthTokenResponse,
   IGoogleOAuthError,
-  IGooglePromptMomentNotification,
   IGoogleUserInfo,
 } from '@/types/googleAuth.types';
 import { IAuthApiResponse } from '@/types/auth.types';
@@ -17,22 +14,6 @@ declare global {
   interface Window {
     google?: {
       accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (res: IGoogleCredentialResponse) => void;
-            auto_select?: boolean;
-            cancel_on_tap_outside?: boolean;
-            use_fedcm_for_prompt?: boolean;
-          }) => void;
-          prompt: (
-            momentListener?: (notification: IGooglePromptMomentNotification) => void
-          ) => void;
-          renderButton: (
-            parent: HTMLElement,
-            options: { theme?: string; size?: string; width?: number; text?: string }
-          ) => void;
-        };
         oauth2?: {
           initTokenClient: (config: {
             client_id: string;
@@ -48,23 +29,6 @@ declare global {
   }
 }
 
-function parseJwt(token: string): IGoogleDecodedToken | null {
-  try {
-    const base64Url = token.split('.')[1];
-    if (!base64Url) return null;
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload) as IGoogleDecodedToken;
-  } catch {
-    return null;
-  }
-}
-
 export function useGoogleAuth() {
   const isLoading = useGoogleAuthStore((state) => state.isLoading);
   const authError = useGoogleAuthStore((state) => state.authError);
@@ -74,7 +38,6 @@ export function useGoogleAuth() {
 
   const setUser = useAuthStore((state) => state.setUser);
   const setIsAuthModalOpen = useAuthStore((state) => state.setIsAuthModalOpen);
-  const user = useAuthStore((state) => state.user);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -117,27 +80,9 @@ export function useGoogleAuth() {
     [setUser, setIsAuthModalOpen, setLoading, setAuthError, resetState]
   );
 
-  // Callback from native Google One Tap / Credential response
-  const handleCredentialResponse = useCallback(
-    async (response: IGoogleCredentialResponse) => {
-      if (!response.credential) return;
-
-      const decoded = parseJwt(response.credential);
-      if (decoded && decoded.email) {
-        await handleAuthPayload({
-          email: decoded.email,
-          fullName: decoded.name || decoded.email.split('@')[0],
-          avatarUrl: decoded.picture,
-          credential: response.credential,
-        });
-      }
-    },
-    [handleAuthPayload]
-  );
-
-  // Initialize native Google Identity Services SDK script
+  // Initialize Google Identity Services SDK script cleanly without auto-prompting FedCM
   useEffect(() => {
-    if (!googleClientId || user || typeof window === 'undefined') return;
+    if (!googleClientId || typeof window === 'undefined') return;
 
     const existingScript = document.getElementById('google-gsi-client');
     if (!existingScript) {
@@ -146,31 +91,9 @@ export function useGoogleAuth() {
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
-      script.onload = () => {
-        if (window.google?.accounts?.id) {
-          window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleCredentialResponse,
-            auto_select: false,
-            cancel_on_tap_outside: true,
-            use_fedcm_for_prompt: false,
-          });
-
-          // Prompt native Google One Tap
-          window.google.accounts.id.prompt();
-        }
-      };
       document.body.appendChild(script);
-    } else if (window.google?.accounts?.id) {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleCredentialResponse,
-        auto_select: false,
-        cancel_on_tap_outside: true,
-        use_fedcm_for_prompt: false,
-      });
     }
-  }, [googleClientId, user, handleCredentialResponse]);
+  }, [googleClientId]);
 
   // Trigger genuine Google OAuth Sign-In flow
   const triggerGoogleSignIn = useCallback(() => {
