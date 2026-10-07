@@ -11,7 +11,7 @@ export function FeedbackFloatingButton() {
   return (
     <aside
       aria-label="User feedback widget"
-      className="fixed bottom-22 right-4 md:bottom-6 md:right-6 z-40 print:hidden"
+      className="hidden md:flex fixed bottom-6 right-6 z-40 print:hidden"
     >
       <Button
         type="button"

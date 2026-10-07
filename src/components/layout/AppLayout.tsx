@@ -10,6 +10,7 @@ import {
   LogIn,
   Sparkles,
   LogOut,
+  Plus,
 } from "lucide-react";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { Button } from "@/components/ui/button";
@@ -163,7 +164,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-7">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-7 pb-24 md:pb-7">
         {children}
       </main>
 
@@ -174,88 +175,86 @@ export function AppLayout({ children }: AppLayoutProps) {
       <FeedbackModal />
       <FeedbackFloatingButton />
 
-      {/* Native Mobile Bottom Navigation Bar (Consumer App Feel) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 px-3 py-1.5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-        <div className="flex items-center justify-around max-w-md mx-auto">
-          {/* Items Tab */}
-          <Button
+      {/* Native Mobile Bottom Navigation Bar (Centered & Fixed Position) */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1">
+        <div className="grid grid-cols-5 items-center justify-items-center w-full max-w-md mx-auto px-1 h-14">
+          {/* 1. Items Tab */}
+          <button
             type="button"
-            variant="ghost"
             onClick={() => {
               setActiveTab("vault");
               setFilterCategory("all");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className={`h-auto flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors cursor-pointer hover:bg-slate-100/60 ${
+            className={`flex flex-col items-center justify-center w-full h-full py-1 rounded-xl transition-all cursor-pointer ${
               activeTab === "vault" && currentCategory === "all"
-                ? "text-cyan-700 font-bold bg-cyan-50/70"
+                ? "text-cyan-700 font-bold"
                 : "text-slate-500 hover:text-slate-800 font-medium"
             }`}
           >
-            <LayoutGrid className="h-5 w-5" />
-            <span className="text-[10px]">Items</span>
-          </Button>
+            <LayoutGrid className="h-5 w-5 mb-0.5 shrink-0" />
+            <span className="text-[10px] leading-tight">Items</span>
+          </button>
 
-          {/* Categories Tab */}
-          <Button
+          {/* 2. Filter / Categories Tab */}
+          <button
             type="button"
-            variant="ghost"
             onClick={() => {
               setActiveTab("categories");
               const el = document.getElementById("category-filter-section");
               if (el) el.scrollIntoView({ behavior: "smooth" });
             }}
-            className={`h-auto flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-colors cursor-pointer hover:bg-slate-100/60 ${
+            className={`flex flex-col items-center justify-center w-full h-full py-1 rounded-xl transition-all cursor-pointer ${
               activeTab === "categories"
-                ? "text-cyan-700 font-bold bg-cyan-50/70"
+                ? "text-cyan-700 font-bold"
                 : "text-slate-500 hover:text-slate-800 font-medium"
             }`}
           >
-            <Layers className="h-5 w-5" />
-            <span className="text-[10px]">Filter</span>
-          </Button>
+            <Layers className="h-5 w-5 mb-0.5 shrink-0" />
+            <span className="text-[10px] leading-tight">Filter</span>
+          </button>
 
-          {/* Central Floating Scan Button */}
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleOpenScanModal}
-            className="h-auto p-0 flex flex-col items-center -mt-5 group focus:outline-none cursor-pointer hover:bg-transparent"
-            aria-label="Scan bill"
-          >
-            <div className="h-13 w-13 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-600 to-cyan-700 p-0.5 shadow-lg shadow-cyan-600/30 group-active:scale-95 transition-transform flex items-center justify-center">
-              <ScanLine className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-[10px] font-bold text-cyan-700 mt-1">
-              Scan Bill
-            </span>
-          </Button>
+          {/* 3. Central Scan Bill Button (Centered & Elevated) */}
+          <div className="relative flex flex-col items-center justify-center w-full h-full">
+            <button
+              type="button"
+              onClick={handleOpenScanModal}
+              className="absolute -top-5 flex flex-col items-center group focus:outline-none cursor-pointer"
+              aria-label="Scan bill"
+            >
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-600 to-cyan-700 shadow-lg shadow-cyan-600/35 group-active:scale-95 transition-transform flex items-center justify-center border-2 border-white ring-2 ring-cyan-100">
+                <ScanLine className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-[10px] font-bold text-cyan-700 mt-1 leading-tight">
+                Scan Bill
+              </span>
+            </button>
+          </div>
 
-          {/* Manual Add Button */}
-          <Button
+          {/* 4. Manual Add Item Button */}
+          <button
             type="button"
-            variant="ghost"
             onClick={handleOpenAddModal}
-            className="h-auto flex flex-col items-center gap-1 py-1 px-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100/60 transition-colors cursor-pointer font-medium"
+            className="flex flex-col items-center justify-center w-full h-full py-1 text-slate-500 hover:text-slate-800 transition-all cursor-pointer font-medium rounded-xl"
           >
-            <div className="h-5 w-5 rounded-lg border border-slate-300 flex items-center justify-center text-xs font-bold text-slate-600">
-              +
-            </div>
-            <span className="text-[10px]">Add Item</span>
-          </Button>
+            <Plus className="h-5 w-5 mb-0.5 shrink-0 text-slate-600" />
+            <span className="text-[10px] leading-tight">Add Item</span>
+          </button>
 
-          {/* Profile / Account Tab */}
-          <Button
+          {/* 5. Profile / Account Tab */}
+          <button
             type="button"
-            variant="ghost"
             onClick={isAuthenticated ? openProfileModal : openLoginModal}
-            className="h-auto flex flex-col items-center gap-1 py-1 px-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100/60 transition-colors cursor-pointer font-medium"
+            className="flex flex-col items-center justify-center w-full h-full py-1 text-slate-500 hover:text-slate-800 transition-all cursor-pointer font-medium rounded-xl"
           >
-            <User className="h-5 w-5" />
-            <span className="text-[10px]">{isAuthenticated ? "Account" : "Sign In"}</span>
-          </Button>
+            <User className="h-5 w-5 mb-0.5 shrink-0" />
+            <span className="text-[10px] leading-tight">
+              {isAuthenticated ? "Account" : "Sign In"}
+            </span>
+          </button>
         </div>
       </nav>
     </div>
   );
 }
+
