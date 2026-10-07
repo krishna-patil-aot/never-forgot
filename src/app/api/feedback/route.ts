@@ -53,15 +53,29 @@ export async function POST(
     // 4. Resolve authenticated user if available (prioritize verified session)
     const authUser = await getAuthenticatedUser(request).catch(() => null);
 
-    const userName =
-      authUser?.fullName ||
-      body.userName?.trim() ||
-      'NeverForgot App User';
+    const userName = (authUser?.fullName || body.userName?.trim()) || '';
+    const userEmail = (authUser?.email || body.userEmail?.trim()?.toLowerCase()) || '';
 
-    const userEmail =
-      authUser?.email ||
-      body.userEmail?.trim() ||
-      'user@neverforgot.app';
+    if (!userName) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Your name is required to submit feedback.',
+        },
+        { status: 400 }
+      );
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!userEmail || !emailRegex.test(userEmail)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'A valid email address is required to submit feedback.',
+        },
+        { status: 400 }
+      );
+    }
 
     const payload: IFeedbackSubmissionDto = {
       rating,

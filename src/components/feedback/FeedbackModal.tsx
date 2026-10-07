@@ -340,11 +340,14 @@ export function FeedbackModal() {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-700">Your Name</Label>
+                      <Label className="text-xs font-semibold text-slate-700">
+                        Your Name <span className="text-rose-500">*</span>
+                      </Label>
                       <div className="relative">
                         <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Input
                           type="text"
+                          required
                           value={userName}
                           onChange={(e) => setUserName(e.target.value)}
                           placeholder="e.g. Krishna Patil"
@@ -354,11 +357,14 @@ export function FeedbackModal() {
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs font-semibold text-slate-700">Your Email</Label>
+                      <Label className="text-xs font-semibold text-slate-700">
+                        Your Email <span className="text-rose-500">*</span>
+                      </Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                         <Input
                           type="email"
+                          required
                           value={userEmail}
                           onChange={(e) => setUserEmail(e.target.value)}
                           placeholder="e.g. user@example.com"
@@ -371,35 +377,47 @@ export function FeedbackModal() {
               )}
 
               {/* Submit & Cancel Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  className="rounded-xl h-10 px-4 text-xs font-bold text-slate-600 hover:text-slate-800 cursor-pointer"
-                >
-                  Cancel
-                </Button>
+              <div className="space-y-1.5 pt-2">
+                <div className="flex items-center justify-end gap-2.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleClose}
+                    className="rounded-xl h-10 px-4 text-xs font-bold text-slate-600 hover:text-slate-800 cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
 
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="rounded-xl h-10 px-5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 text-white font-bold text-xs shadow-md shadow-cyan-600/20 cursor-pointer flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      <span>Sending...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Submit Feedback</span>
-                      <Send className="h-3.5 w-3.5" />
-                    </>
-                  )}
-                </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      isSubmitting ||
+                      !message.trim() ||
+                      (!isUserLoggedIn && (!userName.trim() || !userEmail.trim()))
+                    }
+                    className="rounded-xl h-10 px-5 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-cyan-600/20 cursor-pointer flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Feedback</span>
+                        <Send className="h-3.5 w-3.5" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {!isUserLoggedIn && (!userName.trim() || !userEmail.trim()) && (
+                  <p className="text-[10px] text-slate-400 text-right">
+                    * Name and email are required to submit feedback
+                  </p>
+                )}
               </div>
             </form>
+
           )}
         </div>
       </DialogContent>

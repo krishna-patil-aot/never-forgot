@@ -111,6 +111,20 @@ export function useFeedbackForm() {
       e.preventDefault();
       setError(null);
 
+      const finalName = (user?.fullName || userName).trim();
+      const finalEmail = (user?.email || userEmail).trim();
+
+      if (!finalName) {
+        setError('Please enter your name before submitting feedback.');
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!finalEmail || !emailRegex.test(finalEmail)) {
+        setError('Please enter a valid email address so our team can follow up with you.');
+        return;
+      }
+
       if (!message.trim()) {
         setError('Please describe your feedback or the issue you experienced.');
         return;
@@ -123,8 +137,8 @@ export function useFeedbackForm() {
           rating,
           category,
           message: message.trim(),
-          userName: (user?.fullName || effectiveUserName).trim() || 'NeverForgot User',
-          userEmail: (user?.email || effectiveUserEmail).trim() || 'user@neverforgot.app',
+          userName: finalName,
+          userEmail: finalEmail,
           selectedTags,
           deviceInfo: getDeviceDiagnostics(),
         };
@@ -154,7 +168,7 @@ export function useFeedbackForm() {
         setIsSubmitting(false);
       }
     },
-    [rating, category, message, effectiveUserName, effectiveUserEmail, selectedTags, user, getDeviceDiagnostics]
+    [rating, category, message, userName, userEmail, selectedTags, user, getDeviceDiagnostics]
   );
 
   const activeRatingTier =
