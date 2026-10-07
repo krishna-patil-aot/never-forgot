@@ -25,7 +25,6 @@ export interface IUseAuthReturn {
   successMessage: string | null;
   alreadyRegistered: boolean;
   otpCooldown: number;
-  devOtpHint: string | null;
   activeTab: AuthTab;
   isAuthModalOpen: boolean;
   isProfileModalOpen: boolean;
@@ -72,7 +71,6 @@ export function useAuth(): IUseAuthReturn {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [alreadyRegistered, setAlreadyRegistered] = useState<boolean>(false);
   const [otpCooldown, setOtpCooldown] = useState<number>(0);
-  const [devOtpHint, setDevOtpHint] = useState<string | null>(null);
 
   // Check initial active session on page mount
   useEffect(() => {
@@ -290,9 +288,6 @@ export function useAuth(): IUseAuthReturn {
         }
 
         setSuccessMessage(data.message);
-        if (data.devOtp) {
-          setDevOtpHint(data.devOtp);
-        }
         setOtpCooldown(60); // 60 seconds cooldown
         setIsLoading(false);
         return true;
@@ -335,7 +330,6 @@ export function useAuth(): IUseAuthReturn {
           setSuccessMessage(data.message);
         }
 
-        setDevOtpHint(null);
         setIsLoading(false);
         return true;
       } catch (err) {
@@ -370,9 +364,6 @@ export function useAuth(): IUseAuthReturn {
         }
 
         setSuccessMessage(data.message);
-        if (data.devOtp) {
-          setDevOtpHint(data.devOtp);
-        }
         setOtpCooldown(60);
         setIsLoading(false);
         return true;
@@ -408,7 +399,6 @@ export function useAuth(): IUseAuthReturn {
         }
 
         setSuccessMessage(data.message);
-        setDevOtpHint(null);
         setActiveTab('login');
         setIsLoading(false);
         return true;
@@ -480,7 +470,6 @@ export function useAuth(): IUseAuthReturn {
     successMessage,
     alreadyRegistered,
     otpCooldown,
-    devOtpHint,
     activeTab,
     isAuthModalOpen,
     isProfileModalOpen,

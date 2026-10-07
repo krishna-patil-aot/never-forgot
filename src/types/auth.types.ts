@@ -74,6 +74,6 @@ export interface IAuthApiResponse {
   success: boolean;
   message: string;
   user?: IUserProfile;
-  devOtp?: string;
   alreadyRegistered?: boolean;
 }
+

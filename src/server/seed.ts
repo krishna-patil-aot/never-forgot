@@ -4,14 +4,14 @@ import { computeExpiryStatus } from './repositories/asset.repository';
 export async function seedDatabase(): Promise<void> {
   // Check if default user exists
   let user = await prisma.user.findUnique({
-    where: { email: 'krishna.patil@example.com' },
+    where: { email: 'krishna.patil@algoocean.com' },
   });
 
   if (!user) {
     user = await prisma.user.create({
       data: {
         id: 'user-default',
-        email: 'krishna.patil@example.com',
+        email: 'krishna.patil@algoocean.com',
         fullName: 'Krishna Patil',
         phone: '+91 98765 43210',
         role: 'user',

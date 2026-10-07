@@ -26,7 +26,6 @@ export function useAuthModalForm() {
     successMessage,
     alreadyRegistered,
     otpCooldown,
-    devOtpHint,
     closeAuthModal,
     setActiveTab,
     clearMessages,
@@ -95,12 +94,6 @@ export function useAuthModalForm() {
     clearGoogleError();
   }, [setIsOtpLoginMode, isOtpLoginMode, setIsOtpSent, clearMessages, clearGoogleError]);
 
-  const handleFillDevOtp = React.useCallback(() => {
-    if (devOtpHint) {
-      setValue('otpCode', devOtpHint, { shouldValidate: true });
-    }
-  }, [devOtpHint, setValue]);
-
   const handleGoogleSignIn = React.useCallback(() => {
     clearMessages();
     triggerGoogleSignIn();
@@ -161,6 +154,12 @@ export function useAuthModalForm() {
     reset();
   }, [closeAuthModal, resetPasswordsAndOtp, clearGoogleError, reset]);
 
+  const handleChangeEmail = React.useCallback(() => {
+    setIsOtpSent(false);
+    setValue('otpCode', '');
+    clearMessages();
+  }, [setIsOtpSent, setValue, clearMessages]);
+
   return {
     // React Hook Form tools
     form,
@@ -183,15 +182,14 @@ export function useAuthModalForm() {
     successMessage,
     alreadyRegistered,
     otpCooldown,
-    devOtpHint,
 
     // Handlers
     handleTabChange,
     toggleShowPassword,
     toggleOtpLoginMode,
-    handleFillDevOtp,
     handleGoogleSignIn,
     handleResendOtp,
+    handleChangeEmail,
     handleCloseModal,
     clearMessages,
   };

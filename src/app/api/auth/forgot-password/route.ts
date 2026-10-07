@@ -34,14 +34,20 @@ export async function POST(
     const otpCode = generateNumericOtp();
     await AuthRepository.createOtp(email, otpCode, 'reset_password', 15);
 
+    // Dispatch real email to user's inbox
+    const { EmailService } = await import('@/server/services/email.service');
+    const emailResult = await EmailService.sendPasswordResetEmail(email, otpCode).catch((mailErr) => {
+      console.error('[forgot-password] Email delivery log:', mailErr);
+      return { success: false, error: String(mailErr), deliveredMode: 'failed' as const };
+    });
+
     console.log(
-      `[NeverForgot Auth] 🔐 Password Reset OTP for ${email}: [ ${otpCode} ] (Valid for 15 minutes)`
+      `[NeverForgot Auth] 🔐 Password Reset OTP for ${email}: [ ${otpCode} ] (Valid for 15 minutes) | Delivery: ${emailResult.deliveredMode ?? 'attempted'}`
     );
 
     return NextResponse.json({
       success: true,
-      message: `Password reset verification OTP sent to ${email}`,
-      devOtp: otpCode,
+      message: `Password reset verification code sent to your email (${email}). Please check your inbox.`,
     });
   } catch (err) {
     const errorMsg =

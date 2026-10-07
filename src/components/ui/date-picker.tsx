@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format } from 'date-fns';
+import moment from 'moment';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,18 +12,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useDatePicker } from '@/hooks/useDatePicker';
+import { IDatePickerProps } from '@/types/datePicker.types';
 
-export interface DatePickerProps {
-  value?: string | Date | null;
-  onChange?: (dateString: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-  className?: string;
-  id?: string;
-  clearable?: boolean;
-  minDate?: Date;
-  maxDate?: Date;
-}
+export type { IDatePickerProps as DatePickerProps };
 
 export function DatePicker({
   value,
@@ -35,7 +26,7 @@ export function DatePicker({
   clearable = true,
   minDate,
   maxDate,
-}: DatePickerProps) {
+}: IDatePickerProps) {
   const {
     isOpen,
     setIsOpen,
@@ -61,7 +52,7 @@ export function DatePicker({
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-cyan-600 shrink-0" />
           <span className="flex-1 truncate">
-            {selectedDate ? format(selectedDate, 'PPP') : placeholder}
+            {selectedDate ? moment(selectedDate).format('ll') : placeholder}
           </span>
           {clearable && selectedDate && !disabled && (
             <span
@@ -93,6 +84,8 @@ export function DatePicker({
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
+          minDate={minDate}
+          maxDate={maxDate}
           disabled={(date) => {
             if (minDate && date < minDate) return true;
             if (maxDate && date > maxDate) return true;

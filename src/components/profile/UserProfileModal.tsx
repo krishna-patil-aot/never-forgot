@@ -25,7 +25,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Package,
+  MessageSquareHeart,
+  Sparkles,
 } from 'lucide-react';
+import { useFeedbackStore } from '@/stores/useFeedbackStore';
 
 export function UserProfileModal() {
   const {
@@ -40,6 +43,7 @@ export function UserProfileModal() {
     closeProfileModal,
   } = useProfileForm();
 
+  const openFeedbackModal = useFeedbackStore((state) => state.openFeedbackModal);
   const totalAssets = useAssetStore((state) => state.assets.length);
 
   if (!user) return null;
@@ -186,6 +190,34 @@ export function UserProfileModal() {
                   className="h-4 w-4 rounded text-cyan-600 focus:ring-cyan-500 cursor-pointer shrink-0"
                 />
               </div>
+            </div>
+
+            {/* User Feedback & Suggestions Button */}
+            <div className="pt-0.5">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  closeProfileModal();
+                  openFeedbackModal();
+                }}
+                className="w-full h-12 rounded-2xl border-cyan-200/90 bg-gradient-to-r from-cyan-50/70 via-teal-50/40 to-slate-50 hover:bg-cyan-100/60 text-slate-800 font-bold text-xs flex items-center justify-between px-3.5 transition-all cursor-pointer group shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-8 w-8 rounded-xl bg-cyan-600 text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                    <MessageSquareHeart className="h-4 w-4" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-xs font-bold text-slate-900 leading-tight truncate">
+                      Share Feedback & Experience
+                    </p>
+                    <p className="text-[10px] text-cyan-800 font-medium truncate">
+                      Rate app (1-5★) or report any issue
+                    </p>
+                  </div>
+                </div>
+                <Sparkles className="h-4 w-4 text-cyan-600 shrink-0 group-hover:rotate-12 transition-transform" />
+              </Button>
             </div>
 
             {/* Responsive Action Buttons */}

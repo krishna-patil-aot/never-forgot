@@ -5,6 +5,7 @@ import {
   signSessionToken,
   attachSessionCookie,
 } from '@/server/auth/auth.utils';
+import { EmailService } from '@/server/services/email.service';
 import { IRegisterDto, IAuthApiResponse } from '@/types/auth.types';
 
 export const dynamic = 'force-dynamic';
@@ -56,6 +57,16 @@ export async function POST(
       authProvider: 'credentials',
       emailVerified: false,
     });
+
+    // Send welcome email to new user
+    EmailService.sendWelcomeEmail(newUser.email, newUser.fullName).catch(
+      (emailErr) => {
+        console.error(
+          `[Register] Failed to send welcome email to ${newUser.email}:`,
+          emailErr
+        );
+      }
+    );
 
     // Create session token & response
     const token = signSessionToken({

@@ -1,12 +1,27 @@
+import moment from 'moment';
 import { prisma } from '@/lib/prisma';
 import { AssetCategory } from '@/types/asset.types';
 import { NotificationType } from '@/types/notification.types';
+import { EmailService } from './email.service';
 
 export class NotificationService {
   /**
-   * Run proactive expiry check on user's assets and create notifications if approaching deadlines
+   * Run automated expiry check on user's assets and dispatch reminder notifications
+   * Automatically triggers:
+   * 1. 7 Days before expiration ("before 7 day")
+   * 2. 1 Last day before expiration ("one last day before expired")
    */
   static async checkAndGenerateAlerts(userId: string): Promise<number> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        notificationEmailEnabled: true,
+      },
+    });
+
     const assets = await prisma.asset.findMany({
       where: { userId },
       include: {
@@ -19,40 +34,138 @@ export class NotificationService {
 
     const existingNotifications = await prisma.notification.findMany({
       where: { userId },
-      select: { assetId: true, type: true },
+      select: { assetId: true, type: true, link: true, title: true },
     });
 
-    const existingMap = new Set(
-      existingNotifications.map(
-        (n: { assetId: string | null; type: string }) => `${n.assetId || ''}_${n.type}`
-      )
-    );
+    // Track which milestones have already been dispatched to prevent duplicate spam
+    const existingMap = new Set<string>();
+    for (const notif of existingNotifications) {
+      if (notif.assetId) {
+        if (notif.link?.includes('milestone=7d') || notif.title.includes('7-Day Reminder')) {
+          existingMap.add(`${notif.assetId}_warranty_expiry_7d`);
+        }
+        if (
+          notif.link?.includes('milestone=1d') ||
+          notif.title.includes('Final Notice') ||
+          notif.title.includes('1-Day')
+        ) {
+          existingMap.add(`${notif.assetId}_warranty_expiry_1d`);
+        }
+        if (notif.link?.includes('milestone=expired') || notif.title.includes('Coverage Expired')) {
+          existingMap.add(`${notif.assetId}_warranty_expiry_expired`);
+        }
+        existingMap.add(`${notif.assetId}_${notif.type}`);
+      }
+    }
 
     let generatedCount = 0;
-    const now = new Date();
+    const nowMoment = moment().startOf('day');
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://never-forgot.vercel.app/';
 
     for (const asset of assets) {
-      const diffMs = asset.expiryOrRenewalDate.getTime() - now.getTime();
-      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      const expiryMoment = moment(asset.expiryOrRenewalDate).startOf('day');
+      const diffDays = expiryMoment.diff(nowMoment, 'days');
+      const formattedDate = expiryMoment.format('DD MMMM YYYY');
 
-      // 1. Critical 7-day or expired alert
-      if (diffDays <= 7) {
-        const key = `${asset.id}_warranty_expiry`;
-        if (!existingMap.has(key)) {
+      // -------------------------------------------------------------
+      // 1. AUTOMATED 7-DAY ADVANCE REMINDER ("before 7 day")
+      // -------------------------------------------------------------
+      if (diffDays <= 7 && diffDays > 1) {
+        const key7d = `${asset.id}_warranty_expiry_7d`;
+        if (!existingMap.has(key7d)) {
           await prisma.notification.create({
             data: {
               userId,
               assetId: asset.id,
-              title: diffDays < 0 ? `Coverage Expired: ${asset.title}` : `Urgent: ${asset.title} expires in ${diffDays} days`,
-              message: diffDays < 0
-                ? `Warranty coverage for ${asset.title} expired ${Math.abs(diffDays)} days ago.`
-                : `Warranty coverage for ${asset.title} ends on ${asset.expiryOrRenewalDate.toISOString().split('T')[0]}. File any claims now.`,
+              title: `⚠️ 7-Day Reminder: ${asset.title}`,
+              message: `Warranty coverage for ${asset.title} expires in ${diffDays} days on ${formattedDate}. Check the condition and file any warranty claims or service requests now.`,
               category: asset.category,
               type: 'warranty_expiry',
-              link: `/#${asset.id}`,
+              link: `/#${asset.id}?milestone=7d`,
             },
           });
-          existingMap.add(key);
+          existingMap.add(key7d);
+          generatedCount++;
+
+          // Automated email reminder dispatch (no manual trigger required)
+          if (user?.email && user.notificationEmailEnabled) {
+            EmailService.sendWarrantyExpiryAlert({
+              recipientName: user.fullName || 'Valued User',
+              recipientEmail: user.email,
+              assetTitle: asset.title,
+              brandOrProvider: asset.providerOrBrand,
+              category: asset.category,
+              expiryDate: formattedDate,
+              daysRemaining: diffDays,
+              identifierNumber: asset.identifierNumber || undefined,
+              price: asset.price || undefined,
+              actionUrl: `${appUrl}#${asset.id}`,
+            }).catch((err: Error) => {
+              console.error('[NotificationService] Automated 7-day reminder email failed:', err.message);
+            });
+          }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // 2. AUTOMATED 1-DAY FINAL NOTICE ("one last day before expired")
+      // -------------------------------------------------------------
+      if (diffDays <= 1 && diffDays >= 0) {
+        const key1d = `${asset.id}_warranty_expiry_1d`;
+        if (!existingMap.has(key1d)) {
+          const dayLabel = diffDays === 0 ? 'today' : 'tomorrow';
+          await prisma.notification.create({
+            data: {
+              userId,
+              assetId: asset.id,
+              title: `🚨 Final Notice: ${asset.title} expires ${dayLabel}!`,
+              message: `Urgent: Warranty for ${asset.title} expires ${dayLabel} (${formattedDate}). This is your last day to claim free replacement, parts, or repairs.`,
+              category: asset.category,
+              type: 'warranty_expiry',
+              link: `/#${asset.id}?milestone=1d`,
+            },
+          });
+          existingMap.add(key1d);
+          generatedCount++;
+
+          // Automated urgent final notice email dispatch
+          if (user?.email && user.notificationEmailEnabled) {
+            EmailService.sendWarrantyExpiryAlert({
+              recipientName: user.fullName || 'Valued User',
+              recipientEmail: user.email,
+              assetTitle: asset.title,
+              brandOrProvider: asset.providerOrBrand,
+              category: asset.category,
+              expiryDate: formattedDate,
+              daysRemaining: diffDays,
+              identifierNumber: asset.identifierNumber || undefined,
+              price: asset.price || undefined,
+              actionUrl: `${appUrl}#${asset.id}`,
+            }).catch((err: Error) => {
+              console.error('[NotificationService] Automated 1-day final notice email failed:', err.message);
+            });
+          }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // 3. POST-EXPIRY LAPSED NOTIFICATION
+      // -------------------------------------------------------------
+      if (diffDays < 0 && diffDays >= -14) {
+        const keyExpired = `${asset.id}_warranty_expiry_expired`;
+        if (!existingMap.has(keyExpired)) {
+          await prisma.notification.create({
+            data: {
+              userId,
+              assetId: asset.id,
+              title: `Coverage Expired: ${asset.title}`,
+              message: `Warranty coverage for ${asset.title} expired on ${formattedDate} (${Math.abs(diffDays)} days ago).`,
+              category: asset.category,
+              type: 'warranty_expiry',
+              link: `/#${asset.id}?milestone=expired`,
+            },
+          });
+          existingMap.add(keyExpired);
           generatedCount++;
         }
       }
@@ -77,9 +190,10 @@ export class NotificationService {
         }
       }
 
-      // 3. Upcoming service milestones
+      // 4. Upcoming service milestones
       for (const ms of asset.serviceMilestones) {
-        const msDiff = Math.ceil((ms.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const msMoment = moment(ms.dueDate).startOf('day');
+        const msDiff = msMoment.diff(nowMoment, 'days');
         if (msDiff >= 0 && msDiff <= 30) {
           const msKey = `${ms.id}_service_due`;
           if (!existingMap.has(msKey)) {
@@ -88,7 +202,7 @@ export class NotificationService {
                 userId,
                 assetId: asset.id,
                 title: `Service Due: ${ms.title}`,
-                message: `Scheduled service for ${asset.title} is due in ${msDiff} days (${ms.dueDate.toISOString().split('T')[0]}).`,
+                message: `Scheduled service for ${asset.title} is due in ${msDiff} days (${msMoment.format('DD MMMM YYYY')}).`,
                 category: asset.category,
                 type: 'service_due',
                 link: `/#${asset.id}`,
@@ -102,6 +216,29 @@ export class NotificationService {
     }
 
     return generatedCount;
+  }
+
+  /**
+   * Proactively scan ALL users in the system and dispatch automated 7-day and 1-day reminders
+   * Can be invoked by cron scheduler, daily background worker, or API endpoint
+   */
+  static async checkAllUsersExpiringAssets(): Promise<{ scannedUsers: number; generatedAlerts: number }> {
+    const users = await prisma.user.findMany({
+      select: { id: true },
+    });
+
+    let totalAlerts = 0;
+    for (const u of users) {
+      try {
+        const count = await this.checkAndGenerateAlerts(u.id);
+        totalAlerts += count;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : 'Unknown scan error';
+        console.error(`[NotificationService] Error scanning user ${u.id}:`, errMsg);
+      }
+    }
+
+    return { scannedUsers: users.length, generatedAlerts: totalAlerts };
   }
 
   /**

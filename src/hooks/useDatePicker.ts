@@ -1,39 +1,30 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { format, isValid } from 'date-fns';
+import moment from 'moment';
+import {
+  IUseDatePickerProps,
+  IUseDatePickerReturn,
+} from '@/types/datePicker.types';
 
-export interface IUseDatePickerProps {
-  value?: string | Date | null;
-  onChange?: (dateString: string) => void;
-}
-
-export interface IUseDatePickerReturn {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  selectedDate: Date | undefined;
-  handleSelect: (date: Date | undefined) => void;
-  handleClear: (e: React.MouseEvent) => void;
-  handleToday: () => void;
-}
+export type { IUseDatePickerProps, IUseDatePickerReturn };
 
 /**
  * Safely parse a date string (YYYY-MM-DD) or Date object into a local Date instance
- * to avoid timezone shifts.
+ * using moment.js to prevent timezone discrepancies.
  */
 export function parseLocalDate(val?: string | Date | null): Date | undefined {
   if (!val) return undefined;
   if (val instanceof Date) {
-    return isValid(val) ? val : undefined;
+    return isNaN(val.getTime()) ? undefined : val;
   }
   if (typeof val === 'string') {
-    const parts = val.split('T')[0].split('-').map(Number);
-    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
-      const parsed = new Date(parts[0], parts[1] - 1, parts[2]);
-      return isValid(parsed) ? parsed : undefined;
+    const m = moment(val.split('T')[0], ['YYYY-MM-DD', 'YYYY/MM/DD', moment.ISO_8601], true);
+    if (m.isValid()) {
+      return m.toDate();
     }
-    const d = new Date(val);
-    return isValid(d) ? d : undefined;
+    const fallback = moment(val);
+    return fallback.isValid() ? fallback.toDate() : undefined;
   }
   return undefined;
 }
@@ -46,7 +37,7 @@ export function useDatePicker({ value, onChange }: IUseDatePickerProps): IUseDat
     (date: Date | undefined) => {
       if (!onChange) return;
       if (date) {
-        onChange(format(date, 'yyyy-MM-dd'));
+        onChange(moment(date).format('YYYY-MM-DD'));
       } else {
         onChange('');
       }
@@ -67,7 +58,7 @@ export function useDatePicker({ value, onChange }: IUseDatePickerProps): IUseDat
 
   const handleToday = useCallback(() => {
     if (onChange) {
-      onChange(format(new Date(), 'yyyy-MM-dd'));
+      onChange(moment().format('YYYY-MM-DD'));
     }
     setIsOpen(false);
   }, [onChange]);

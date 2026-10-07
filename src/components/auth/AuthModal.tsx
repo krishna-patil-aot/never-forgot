@@ -42,16 +42,15 @@ export function AuthModal() {
     successMessage,
     alreadyRegistered,
     otpCooldown,
-    devOtpHint,
     showPassword,
     isOtpLoginMode,
     isOtpSent,
     handleTabChange,
     toggleShowPassword,
     toggleOtpLoginMode,
-    handleFillDevOtp,
     handleGoogleSignIn,
     handleResendOtp,
+    handleChangeEmail,
     handleCloseModal,
   } = useAuthModalForm();
 
@@ -250,27 +249,6 @@ export function AuthModal() {
                 </div>
               )}
 
-              {/* Dev Demo OTP Auto-fill Pill */}
-              {devOtpHint && (
-                <div className="p-3 rounded-2xl bg-cyan-50/90 border border-cyan-200 text-cyan-950 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <KeyRound className="h-4 w-4 text-cyan-600" />
-                    <span>
-                      Demo Code: <strong className="font-mono text-cyan-800 text-sm">{devOtpHint}</strong>
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 text-[11px] text-cyan-800 hover:bg-cyan-100 font-bold px-2 rounded-md cursor-pointer"
-                    onClick={handleFillDevOtp}
-                  >
-                    Auto Fill
-                  </Button>
-                </div>
-              )}
-
               {/* Google Fast 1-Click Sign In */}
               {activeTab !== 'forgot_password' && (
                 <div>
@@ -358,15 +336,29 @@ export function AuthModal() {
 
                 {/* Email Address Field */}
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold text-slate-700">Email Address</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-slate-700">Email Address</Label>
+                    {isOtpSent && (
+                      <button
+                        type="button"
+                        onClick={handleChangeEmail}
+                        className="text-[11px] text-cyan-700 hover:text-cyan-800 font-semibold cursor-pointer"
+                      >
+                        Change Email
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                     <Input
                       required
                       type="email"
+                      readOnly={isOtpSent}
                       placeholder="name@example.com"
                       {...register('email')}
-                      className="pl-9 h-10 rounded-xl text-xs"
+                      className={`pl-9 h-10 rounded-xl text-xs ${
+                        isOtpSent ? 'bg-slate-50 text-slate-600 border-slate-200' : ''
+                      }`}
                     />
                   </div>
                 </div>
@@ -450,9 +442,11 @@ export function AuthModal() {
                             required
                             type="text"
                             maxLength={6}
-                            placeholder="e.g. 849201"
+                            autoFocus
+                            autoComplete="one-time-code"
+                            placeholder="Enter 6-digit code"
                             {...register('otpCode')}
-                            className="pl-9 h-10 rounded-xl text-xs font-mono tracking-widest text-base"
+                            className="pl-9 h-11 rounded-xl text-base font-mono tracking-widest text-cyan-900 border-cyan-300 focus:border-cyan-500 focus:ring-cyan-500 font-bold"
                           />
                         </div>
                       </div>

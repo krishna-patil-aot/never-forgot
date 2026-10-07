@@ -20,6 +20,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { UserProfileModal } from "@/components/profile/UserProfileModal";
 import { NotificationDrawer } from "@/components/notifications/NotificationDrawer";
+import { FeedbackModal } from "@/components/feedback/FeedbackModal";
+import { FeedbackFloatingButton } from "@/components/feedback/FeedbackFloatingButton";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
 
 interface AppLayoutProps {
@@ -165,10 +167,12 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
 
-      {/* Global Auth, Profile & Notification Modals */}
+      {/* Global Auth, Profile, Notification & Feedback Modals */}
       <AuthModal />
       <UserProfileModal />
       <NotificationDrawer />
+      <FeedbackModal />
+      <FeedbackFloatingButton />
 
       {/* Native Mobile Bottom Navigation Bar (Consumer App Feel) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 px-3 py-1.5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">

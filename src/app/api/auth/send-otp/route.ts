@@ -41,14 +41,24 @@ export async function POST(
     // Persist OTP in database with 10 minute expiration
     await AuthRepository.createOtp(email, otpCode, purpose, 10);
 
+    // Dispatch real email to user's inbox
+    const { EmailService } = await import('@/server/services/email.service');
+    const emailResult = await EmailService.sendOtpEmail(
+      email,
+      otpCode,
+      purpose as 'login' | 'reset_password' | 'register'
+    ).catch((mailErr) => {
+      console.error('[send-otp] Email delivery log:', mailErr);
+      return { success: false, error: String(mailErr), deliveredMode: 'failed' as const };
+    });
+
     console.log(
-      `[NeverForgot Auth] 🔑 6-Digit OTP for ${email} (${purpose}): [ ${otpCode} ] (Valid for 10 minutes)`
+      `[NeverForgot Auth] 🔑 6-Digit OTP for ${email} (${purpose}): [ ${otpCode} ] (Valid for 10 minutes) | Delivery: ${emailResult.deliveredMode ?? 'attempted'}`
     );
 
     return NextResponse.json({
       success: true,
-      message: `A 6-digit verification code has been generated for ${email}.`,
-      devOtp: otpCode, // Provided for instant local developer testing & demo experience
+      message: `A 6-digit verification code has been sent to your email address (${email}). Please check your inbox.`,
     });
   } catch (err) {
     const errorMsg =
