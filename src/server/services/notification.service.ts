@@ -23,7 +23,9 @@ export class NotificationService {
     });
 
     const existingMap = new Set(
-      existingNotifications.map((n) => `${n.assetId || ''}_${n.type}`)
+      existingNotifications.map(
+        (n: { assetId: string | null; type: string }) => `${n.assetId || ''}_${n.type}`
+      )
     );
 
     let generatedCount = 0;

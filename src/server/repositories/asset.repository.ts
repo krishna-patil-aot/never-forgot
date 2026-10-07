@@ -189,18 +189,16 @@ export class AssetRepository {
     ]);
 
     // Map to domain entity and apply dynamic status filter if specified
-    let mapped = rawAssets.map(mapPrismaToUniversalAsset);
+    const mapped: IUniversalAsset[] = rawAssets.map(mapPrismaToUniversalAsset);
 
-    if (filters.status && filters.status !== 'all') {
-      mapped = mapped.filter((a) => a.status === filters.status);
-    }
-
-    // Paginate in memory if status filter was applied post-fetch, or slice cleanly
-    const total = filters.status && filters.status !== 'all' ? mapped.length : totalCount;
-    const paginatedItems =
+    const filteredAssets: IUniversalAsset[] =
       filters.status && filters.status !== 'all'
-        ? mapped.slice(skip, skip + pageSize)
-        : mapped.slice(0, pageSize);
+        ? mapped.filter((a: IUniversalAsset) => a.status === filters.status)
+        : mapped;
+
+    // Paginate in memory cleanly
+    const total = filters.status && filters.status !== 'all' ? filteredAssets.length : totalCount;
+    const paginatedItems = filteredAssets.slice(skip, skip + pageSize);
 
     const totalPages = Math.ceil(total / pageSize) || 1;
 

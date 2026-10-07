@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Notification as PrismaNotification } from '@prisma/client';
 import { INotification, NotificationType, NotificationPriority } from '@/types/notification.types';
 import { AssetCategory } from '@/types/asset.types';
 
@@ -12,7 +13,7 @@ export class NotificationRepository {
       orderBy: { createdAt: 'desc' },
     });
 
-    return raw.map((n) => {
+    return raw.map((n: PrismaNotification) => {
       // Approximate dueDate from notification timestamp or default
       const createdAtDate = n.createdAt;
       const daysRemaining = 14;
