@@ -13,7 +13,6 @@ import { AiReviewModal } from '@/components/scanner/AiReviewModal';
 import { AddAssetModal } from '@/components/assets/AddAssetModal';
 import { AssetDetailsModal } from '@/components/assets/AssetDetailsModal';
 import { DeleteConfirmModal } from '@/components/assets/DeleteConfirmModal';
-import { NotificationDrawer } from '@/components/notifications/NotificationDrawer';
 import { AboutSection } from '@/components/about/AboutSection';
 import { useFilterAndSearch } from '@/hooks/useFilterAndSearch';
 import { usePagination } from '@/hooks/usePagination';
@@ -82,7 +81,6 @@ export function VaultDashboardPage() {
       <AddAssetModal />
       <AssetDetailsModal />
       <DeleteConfirmModal />
-      <NotificationDrawer />
     </div>
   );
 }

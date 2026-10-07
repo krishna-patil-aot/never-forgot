@@ -19,6 +19,7 @@ import { useConsumerLayout } from "@/hooks/useSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { UserProfileModal } from "@/components/profile/UserProfileModal";
+import { NotificationDrawer } from "@/components/notifications/NotificationDrawer";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
 
 interface AppLayoutProps {
@@ -79,40 +80,41 @@ export function AppLayout({ children }: AppLayoutProps) {
               </div>
             </div>
 
-            {/* Right Action Suite: Hidden on mobile (only logo & title on mobile screens) */}
-            <div className="hidden sm:flex items-center gap-2.5 sm:gap-3">
+            {/* Right Action Suite: Visible on both mobile and desktop */}
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              {/* Notification Bell with Badge (Mobile & Desktop) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative h-10 w-10 rounded-2xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                onClick={() => setIsNotificationPanelOpen(true)}
+                aria-label="Alerts"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span
+                    suppressHydrationWarning
+                    className="absolute top-1 right-1 h-4 min-w-[1rem] px-1 rounded-full bg-rose-500 text-[10px] font-bold flex items-center justify-center text-white ring-2 ring-white"
+                  >
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Desktop-only Auth controls (Mobile uses the bottom navigation) */}
               {isAuthenticated ? (
                 <>
-                  {/* Notification Bell with Badge */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="relative h-10 w-10 rounded-2xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
-                    onClick={() => setIsNotificationPanelOpen(true)}
-                    aria-label="Alerts"
-                  >
-                    <Bell className="h-5 w-5" />
-                    {unreadCount > 0 && (
-                      <span
-                        suppressHydrationWarning
-                        className="absolute top-1 right-1 h-4 min-w-[1rem] px-1 rounded-full bg-rose-500 text-[10px] font-bold flex items-center justify-center text-white ring-2 ring-white"
-                      >
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Button>
-
                   {/* User Profile Avatar Pill */}
                   <button
                     type="button"
                     onClick={openProfileModal}
-                    className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-2xl bg-slate-100 hover:bg-cyan-50 border border-slate-200/80 hover:border-cyan-200 transition-all cursor-pointer group select-none"
+                    className="hidden sm:flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-2xl bg-slate-100 hover:bg-cyan-50 border border-slate-200/80 hover:border-cyan-200 transition-all cursor-pointer group select-none"
                     title={`Signed in as ${user?.fullName} (${user?.email})`}
                   >
                     <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-600 flex items-center justify-center text-xs font-bold text-white shadow-2xs group-hover:scale-105 transition-transform">
                       {userInitials}
                     </div>
-                    <div className="hidden sm:block text-left pr-1">
+                    <div className="text-left pr-1">
                       <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-cyan-800">
                         {user?.fullName.split(" ")[0]}
                       </p>
@@ -124,7 +126,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs font-semibold text-slate-700 hover:text-rose-600 hover:bg-rose-50 border-slate-200/90 rounded-xl cursor-pointer transition-colors"
+                    className="hidden sm:inline-flex text-xs font-semibold text-slate-700 hover:text-rose-600 hover:bg-rose-50 border-slate-200/90 rounded-xl cursor-pointer transition-colors"
                     onClick={() => void logoutUser()}
                     title="Sign Out"
                   >
@@ -133,7 +135,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </Button>
                 </>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -163,9 +165,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
 
-      {/* Global Auth & Profile Modals */}
+      {/* Global Auth, Profile & Notification Modals */}
       <AuthModal />
       <UserProfileModal />
+      <NotificationDrawer />
 
       {/* Native Mobile Bottom Navigation Bar (Consumer App Feel) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 px-3 py-1.5 shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
