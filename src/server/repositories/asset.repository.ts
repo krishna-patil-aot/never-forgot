@@ -362,6 +362,19 @@ export class AssetRepository {
 
     if (!existing) return false;
 
+    // Safely delete associated child records
+    await prisma.serviceMilestone.deleteMany({
+      where: { assetId: id },
+    });
+
+    await prisma.policyDetail.deleteMany({
+      where: { assetId: id },
+    });
+
+    await prisma.notification.deleteMany({
+      where: { userId, assetId: id },
+    });
+
     await prisma.asset.delete({ where: { id } });
     return true;
   }

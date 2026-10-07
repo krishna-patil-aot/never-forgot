@@ -15,6 +15,8 @@ interface AssetState {
   selectedAssetId: string | null;
   isAddModalOpen: boolean;
   isDetailsModalOpen: boolean;
+  assetToDelete: IUniversalAsset | null;
+  isDeleteModalOpen: boolean;
 
   // Actions
   setFilterCategory: (category: AssetCategory | 'all') => void;
@@ -24,6 +26,8 @@ interface AssetState {
   setSelectedAssetId: (id: string | null) => void;
   setIsAddModalOpen: (open: boolean) => void;
   setIsDetailsModalOpen: (open: boolean) => void;
+  setAssetToDelete: (asset: IUniversalAsset | null) => void;
+  setIsDeleteModalOpen: (open: boolean) => void;
 
   // Asset CRUD
   addAsset: (asset: IUniversalAsset) => void;
@@ -43,6 +47,8 @@ export const useAssetStore = create<AssetState>((set) => ({
   selectedAssetId: null,
   isAddModalOpen: false,
   isDetailsModalOpen: false,
+  assetToDelete: null,
+  isDeleteModalOpen: false,
 
   setFilterCategory: (category) =>
     set((state) => ({ filter: { ...state.filter, category } })),
@@ -59,6 +65,8 @@ export const useAssetStore = create<AssetState>((set) => ({
   setSelectedAssetId: (selectedAssetId) => set({ selectedAssetId }),
   setIsAddModalOpen: (isAddModalOpen) => set({ isAddModalOpen }),
   setIsDetailsModalOpen: (isDetailsModalOpen) => set({ isDetailsModalOpen }),
+  setAssetToDelete: (assetToDelete) => set({ assetToDelete }),
+  setIsDeleteModalOpen: (isDeleteModalOpen) => set({ isDeleteModalOpen }),
 
   addAsset: (newAsset) =>
     set((state) => ({ assets: [newAsset, ...state.assets] })),

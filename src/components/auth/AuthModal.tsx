@@ -57,7 +57,7 @@ export function AuthModal() {
 
   return (
     <Dialog open={isAuthModalOpen} onOpenChange={(open) => !open && handleCloseModal()}>
-      <DialogContent className="w-[calc(100%-1.5rem)] sm:max-w-2xl md:max-w-4xl p-0 overflow-hidden rounded-3xl border border-cyan-150 shadow-2xl bg-white max-h-[92vh] flex flex-col">
+      <DialogContent className="w-[calc(100%-1rem)] sm:w-full sm:max-w-2xl md:max-w-4xl p-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-cyan-150 shadow-2xl bg-white max-h-[90dvh] flex flex-col gap-0 my-auto">
         {/* Desktop 2-Column Responsive Layout */}
         <div className="grid grid-cols-1 md:grid-cols-12 flex-1 min-h-0 overflow-hidden">
           {/* Left Column: Aesthetic App Highlight Panel (Visible on Tablet/Desktop) */}
@@ -134,12 +134,15 @@ export function AuthModal() {
           </div>
 
           {/* Right Column: Interactive Clean Auth Form (Scrollable Container) */}
-          <div className="col-span-1 md:col-span-7 flex flex-col overflow-y-auto max-h-[92vh]">
+          <div className="col-span-1 md:col-span-7 flex flex-col min-h-0 overflow-y-auto overscroll-contain">
             {/* Header Ribbon */}
-            <div className="p-5 sm:p-6 pb-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-              <div className="flex items-center justify-between mb-3">
+            <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-slate-100/90 sticky top-0 bg-white/95 backdrop-blur-md z-10 pr-12 sm:pr-14">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2.5 py-1 rounded-full border border-cyan-200/70">
+                  <div className="flex md:hidden items-center gap-1.5 mr-1">
+                    <AppLogo size={20} className="rounded-md" />
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full border border-cyan-200/70">
                     {activeTab === 'login' && 'Sign In'}
                     {activeTab === 'register' && 'New Account'}
                     {activeTab === 'forgot_password' && 'Password Help'}
@@ -148,12 +151,12 @@ export function AuthModal() {
               </div>
 
               <DialogHeader className="text-left space-y-1">
-                <DialogTitle className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+                <DialogTitle className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight">
                   {activeTab === 'login' && (isOtpLoginMode ? 'Sign In with 6-Digit Code' : 'Welcome Back')}
                   {activeTab === 'register' && 'Create Your Account'}
                   {activeTab === 'forgot_password' && 'Reset Your Password'}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-slate-500 font-medium leading-normal">
+                <DialogDescription className="text-xs text-slate-500 font-medium leading-normal line-clamp-2 sm:line-clamp-none">
                   {activeTab === 'login' && 'Sign in to see and manage your bills, warranties, and service dates.'}
                   {activeTab === 'register' && 'Create a free account in 30 seconds to start saving your bills.'}
                   {activeTab === 'forgot_password' && 'Enter your registered email to receive a password reset code.'}
@@ -161,11 +164,11 @@ export function AuthModal() {
               </DialogHeader>
 
               {/* Navigation Tabs Pill Bar */}
-              <div className="flex gap-1.5 p-1 bg-slate-100/90 rounded-2xl mt-4">
+              <div className="flex gap-1 sm:gap-1.5 p-1 bg-slate-100/90 rounded-xl sm:rounded-2xl mt-3 sm:mt-4">
                 <button
                   type="button"
                   onClick={() => handleTabChange('login')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg sm:rounded-xl transition-all cursor-pointer ${
                     activeTab === 'login'
                       ? 'bg-white text-cyan-800 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -176,7 +179,7 @@ export function AuthModal() {
                 <button
                   type="button"
                   onClick={() => handleTabChange('register')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg sm:rounded-xl transition-all cursor-pointer ${
                     activeTab === 'register'
                       ? 'bg-white text-cyan-800 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -187,7 +190,7 @@ export function AuthModal() {
                 <button
                   type="button"
                   onClick={() => handleTabChange('forgot_password')}
-                  className={`py-1.5 px-3 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                  className={`py-1.5 px-3 text-xs font-semibold rounded-lg sm:rounded-xl transition-all cursor-pointer ${
                     activeTab === 'forgot_password'
                       ? 'bg-white text-cyan-800 shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -199,7 +202,7 @@ export function AuthModal() {
             </div>
 
             {/* Form Body */}
-            <div className="p-5 sm:p-6 space-y-4 flex-1">
+            <div className="p-4 sm:p-6 space-y-3.5 sm:space-y-4 flex-1 pb-6 sm:pb-6">
               {/* Status & Error Banners */}
               {error && (
                 <div

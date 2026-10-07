@@ -52,8 +52,21 @@ export function HeroSection() {
           </p>
         </div>
 
-        {/* Action Buttons Suite */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+        {/* Mobile View: Quick Action Guide Prompt (sm:hidden) */}
+        <div className="sm:hidden flex items-center gap-3 p-3.5 rounded-2xl bg-white/85 border border-cyan-200/80 shadow-2xs backdrop-blur-xs">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Sparkles className="h-4.5 w-4.5 text-cyan-100" />
+          </div>
+          <div className="text-xs">
+            <p className="font-bold text-slate-800">Quick Actions Ready</p>
+            <p className="text-[11px] text-slate-500 leading-snug">
+              Use the scan or add button at the bottom navigation anytime.
+            </p>
+          </div>
+        </div>
+
+        {/* Desktop / Tablet Action Buttons Suite (hidden sm:flex) */}
+        <div className="hidden sm:flex flex-row items-center gap-3 pt-1">
           <Button
             size="lg"
             onClick={handleOpenScanModal}

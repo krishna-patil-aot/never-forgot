@@ -10,6 +10,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import { useAssetStore } from '@/stores/useAssetStore';
+import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { IUniversalAsset } from '@/types/asset.types';
 
 export interface ICategoryStyleConfig {
@@ -35,7 +36,7 @@ export interface IUseAssetCardReturn {
 export function useAssetCard(asset: IUniversalAsset): IUseAssetCardReturn {
   const setSelectedAssetId = useAssetStore((state) => state.setSelectedAssetId);
   const setIsDetailsModalOpen = useAssetStore((state) => state.setIsDetailsModalOpen);
-  const deleteAsset = useAssetStore((state) => state.deleteAsset);
+  const { openDeleteModal } = useDeleteConfirm();
 
   // Calculate percentage of elapsed warranty time
   const { percentageElapsed, diffDays } = useMemo(() => {
@@ -119,9 +120,9 @@ export function useAssetCard(asset: IUniversalAsset): IUseAssetCardReturn {
   const handleDelete = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      deleteAsset(asset.id);
+      openDeleteModal(asset);
     },
-    [asset.id, deleteAsset]
+    [asset, openDeleteModal]
   );
 
   return {

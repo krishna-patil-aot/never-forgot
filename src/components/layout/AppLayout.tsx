@@ -9,6 +9,7 @@ import {
   User,
   LogIn,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     openLoginModal,
     openRegisterModal,
     openProfileModal,
+    logoutUser,
   } = useAuth();
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -77,8 +79,8 @@ export function AppLayout({ children }: AppLayoutProps) {
               </div>
             </div>
 
-            {/* Right Action Suite: Alerts Bell & User Profile / Login */}
-            <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Right Action Suite: Hidden on mobile (only logo & title on mobile screens) */}
+            <div className="hidden sm:flex items-center gap-2.5 sm:gap-3">
               {isAuthenticated ? (
                 <>
                   {/* Notification Bell with Badge */}
@@ -117,6 +119,18 @@ export function AppLayout({ children }: AppLayoutProps) {
                       <p className="text-[10px] text-slate-500 leading-none">Account</p>
                     </div>
                   </button>
+
+                  {/* Sign Out Action with proper LogOut icon */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs font-semibold text-slate-700 hover:text-rose-600 hover:bg-rose-50 border-slate-200/90 rounded-xl cursor-pointer transition-colors"
+                    onClick={() => void logoutUser()}
+                    title="Sign Out"
+                  >
+                    <LogOut className="h-3.5 w-3.5 mr-1.5 text-rose-500" />
+                    Sign Out
+                  </Button>
                 </>
               ) : (
                 <div className="flex items-center gap-2">
