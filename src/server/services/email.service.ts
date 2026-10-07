@@ -247,10 +247,29 @@ export class EmailService {
   static async sendFeedbackEmail(
     feedbackData: IFeedbackSubmissionDto
   ): Promise<ISendEmailResult> {
-    const recipientEmail =
+    let recipientEmail =
       process.env.FEEDBACK_RECEIVER_EMAIL ||
-      process.env.ADMIN_EMAIL ||
-      'krishna.patil@algoocean.com';
+      process.env.ADMIN_EMAIL;
+
+    // Dynamically fallback to admin in database or SMTP_USER
+    if (!recipientEmail) {
+      try {
+        const { prisma } = await import('@/lib/prisma');
+        const adminUser = await prisma.user.findFirst({
+          where: { role: 'admin' },
+          select: { email: true },
+        });
+        if (adminUser?.email) {
+          recipientEmail = adminUser.email;
+        }
+      } catch {
+        // Fall through to SMTP_USER
+      }
+    }
+
+    if (!recipientEmail) {
+      recipientEmail = process.env.SMTP_USER || 'notifications@neverforgot.app';
+    }
 
     const categoryNames: Record<string, string> = {
       bug_report: 'Bug Report',
