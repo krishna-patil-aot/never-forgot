@@ -9,13 +9,27 @@ type GlobalWithPrisma = typeof globalThis & {
 
 const globalForPrisma = globalThis as GlobalWithPrisma;
 
+function cleanConnectionString(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl);
+    url.searchParams.delete("sslmode");
+    return url.toString();
+  } catch {
+    return rawUrl;
+  }
+}
+
 function createPrismaClient(): PrismaClient {
-  const connectionString =
+  const rawConnectionString =
     process.env.DATABASE_URL || process.env.DIRECT_URL || "";
+
+  const connectionString = cleanConnectionString(rawConnectionString);
 
   const pool = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
+    max: 10,
+    connectionTimeoutMillis: 10000,
   });
 
   const adapter = new PrismaPg(pool);
