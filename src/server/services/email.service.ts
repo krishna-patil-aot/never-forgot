@@ -325,5 +325,88 @@ export class EmailService {
       text,
     });
   }
+
+  /**
+   * Send automated EMI installment reminder alert (7-day or 1-day notice)
+   */
+  static async sendEmiReminderAlert(
+    data: import('@/types/email.types').IEmiReminderEmailData
+  ): Promise<ISendEmailResult> {
+    const isUrgent = data.daysRemaining <= 1;
+    const dueLabel =
+      data.daysRemaining === 0
+        ? 'TODAY'
+        : data.daysRemaining === 1
+        ? 'TOMORROW'
+        : `in ${data.daysRemaining} days`;
+    const subject = isUrgent
+      ? `🚨 Urgent EMI Due ${dueLabel}: ₹${data.emiAmount.toLocaleString('en-IN')} for ${data.emiTitle}`
+      : `⚠️ 7-Day EMI Reminder: ₹${data.emiAmount.toLocaleString('en-IN')} for ${data.emiTitle} due on ${data.dueDate}`;
+
+    const html = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="color: #0f172a; margin: 0 0 8px 0; font-size: 22px;">💳 NeverForgot EMI Sentinel</h2>
+          <span style="display: inline-block; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: bold; background: ${
+            isUrgent ? '#fee2e2; color: #b91c1c;' : '#e0f2fe; color: #0369a1;'
+          }">
+            ${isUrgent ? 'URGENT PAYMENT NOTICE' : 'UPCOMING EMI PAYMENT'}
+          </span>
+        </div>
+        <p style="font-size: 14px; color: #334155; margin-bottom: 20px;">
+          Hi <strong>${data.recipientName}</strong>, this is an automated reminder for your upcoming loan EMI installment.
+        </p>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Loan Title:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #0f172a; text-align: right;">${data.emiTitle}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Lender / Bank:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #0f172a; text-align: right;">${data.lenderName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Loan Type:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #0f172a; text-align: right; text-transform: capitalize;">${data.loanType.replace(/_/g, ' ')}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Monthly EMI:</td>
+              <td style="padding: 6px 0; font-weight: 800; color: #0284c7; text-align: right; font-size: 16px;">₹${data.emiAmount.toLocaleString('en-IN')}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #64748b;">Due Date:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: ${
+                isUrgent ? '#dc2626' : '#0f172a'
+              }; text-align: right;">${data.dueDate} (${dueLabel})</td>
+            </tr>
+            ${
+              data.accountNumber
+                ? `<tr>
+              <td style="padding: 6px 0; color: #64748b;">Account Number:</td>
+              <td style="padding: 6px 0; font-weight: bold; color: #0f172a; text-align: right;">${data.accountNumber}</td>
+            </tr>`
+                : ''
+            }
+          </table>
+        </div>
+        <div style="text-align: center; margin-top: 24px;">
+          <a href="${data.actionUrl}" style="display: inline-block; padding: 12px 28px; background: #0891b2; color: #ffffff; text-decoration: none; font-weight: bold; font-size: 14px; border-radius: 12px; box-shadow: 0 2px 4px rgba(8, 145, 178, 0.2);">
+            View Loan & Mark Paid
+          </a>
+        </div>
+        <p style="text-align: center; font-size: 11px; color: #94a3b8; margin-top: 28px;">
+          NeverForgot • Automated financial alerts to ensure zero late fees or credit score impact.
+        </p>
+      </div>
+    `;
+
+    return this.sendEmail({
+      to: data.recipientEmail,
+      subject,
+      html,
+      text: `Hi ${data.recipientName}, your EMI of ₹${data.emiAmount} for ${data.emiTitle} (${data.lenderName}) is due ${dueLabel} on ${data.dueDate}. View your loan: ${data.actionUrl}`,
+    });
+  }
 }
 

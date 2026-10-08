@@ -32,9 +32,13 @@ export class NotificationService {
       },
     });
 
+    const emis = await prisma.emiReminder.findMany({
+      where: { userId, status: 'active' },
+    });
+
     const existingNotifications = await prisma.notification.findMany({
       where: { userId },
-      select: { assetId: true, type: true, link: true, title: true },
+      select: { assetId: true, emiId: true, type: true, link: true, title: true },
     });
 
     // Track which milestones have already been dispatched to prevent duplicate spam
@@ -55,6 +59,15 @@ export class NotificationService {
           existingMap.add(`${notif.assetId}_warranty_expiry_expired`);
         }
         existingMap.add(`${notif.assetId}_${notif.type}`);
+      }
+      if (notif.emiId) {
+        existingMap.add(`${notif.emiId}_${notif.type}`);
+        if (notif.link?.includes('milestone=7d')) {
+          existingMap.add(`${notif.emiId}_emi_7d`);
+        }
+        if (notif.link?.includes('milestone=1d')) {
+          existingMap.add(`${notif.emiId}_emi_1d`);
+        }
       }
     }
 
@@ -210,6 +223,106 @@ export class NotificationService {
             });
             existingMap.add(msKey);
             generatedCount++;
+          }
+        }
+      }
+    }
+
+    // =============================================================
+    // 5. AUTOMATED EMI INSTALLMENT REMINDERS (7-Day and 1-Day Notice)
+    // =============================================================
+    const currentYearMonth = nowMoment.format('YYYY-MM');
+
+    for (const emi of emis) {
+      const isPaidThisMonth = emi.lastPaidMonth === currentYearMonth;
+      if (isPaidThisMonth) continue;
+
+      const currentMonthDue = moment()
+        .date(Math.min(emi.dueDay, moment().daysInMonth()))
+        .startOf('day');
+
+      let targetDueDate = currentMonthDue;
+      if (nowMoment.isAfter(currentMonthDue, 'day')) {
+        const nextMonth = moment().add(1, 'month');
+        targetDueDate = nextMonth
+          .date(Math.min(emi.dueDay, nextMonth.daysInMonth()))
+          .startOf('day');
+      }
+
+      const emiDiff = targetDueDate.diff(nowMoment, 'days');
+      const formattedEmiDate = targetDueDate.format('DD MMMM YYYY');
+
+      // 1. 7-Day Reminder
+      if (emiDiff <= 7 && emiDiff > 1) {
+        const key7d = `${emi.id}_emi_7d_${targetDueDate.format('YYYY-MM')}`;
+        if (!existingMap.has(key7d)) {
+          await prisma.notification.create({
+            data: {
+              userId,
+              emiId: emi.id,
+              title: `⚠️ 7-Day EMI Reminder: ${emi.title}`,
+              message: `Monthly EMI of ₹${emi.emiAmount.toLocaleString('en-IN')} for ${emi.title} (${emi.lenderName}) is due in ${emiDiff} days on ${formattedEmiDate}. Ensure sufficient balance for payment.`,
+              category: 'emi',
+              type: 'emi_reminder_7d',
+              link: `/#emi-${emi.id}?milestone=7d`,
+            },
+          });
+          existingMap.add(key7d);
+          generatedCount++;
+
+          if (user?.email && user.notificationEmailEnabled) {
+            EmailService.sendEmiReminderAlert({
+              recipientName: user.fullName || 'Valued Member',
+              recipientEmail: user.email,
+              emiTitle: emi.title,
+              lenderName: emi.lenderName,
+              loanType: emi.loanType,
+              emiAmount: emi.emiAmount,
+              dueDate: formattedEmiDate,
+              daysRemaining: emiDiff,
+              accountNumber: emi.accountNumber || undefined,
+              actionUrl: `${appUrl}#emi-${emi.id}`,
+            }).catch((err: Error) => {
+              console.error('[NotificationService] Automated 7-day EMI email failed:', err.message);
+            });
+          }
+        }
+      }
+
+      // 2. 1-Day Urgent Notice
+      if (emiDiff <= 1 && emiDiff >= 0) {
+        const key1d = `${emi.id}_emi_1d_${targetDueDate.format('YYYY-MM')}`;
+        if (!existingMap.has(key1d)) {
+          const dayLabel = emiDiff === 0 ? 'today' : 'tomorrow';
+          await prisma.notification.create({
+            data: {
+              userId,
+              emiId: emi.id,
+              title: `🚨 Urgent: ${emi.title} EMI due ${dayLabel}!`,
+              message: `Urgent: EMI installment of ₹${emi.emiAmount.toLocaleString('en-IN')} for ${emi.title} (${emi.lenderName}) is due ${dayLabel} (${formattedEmiDate}). Please keep funds ready to avoid penalties.`,
+              category: 'emi',
+              type: 'emi_reminder_1d',
+              link: `/#emi-${emi.id}?milestone=1d`,
+            },
+          });
+          existingMap.add(key1d);
+          generatedCount++;
+
+          if (user?.email && user.notificationEmailEnabled) {
+            EmailService.sendEmiReminderAlert({
+              recipientName: user.fullName || 'Valued Member',
+              recipientEmail: user.email,
+              emiTitle: emi.title,
+              lenderName: emi.lenderName,
+              loanType: emi.loanType,
+              emiAmount: emi.emiAmount,
+              dueDate: formattedEmiDate,
+              daysRemaining: emiDiff,
+              accountNumber: emi.accountNumber || undefined,
+              actionUrl: `${appUrl}#emi-${emi.id}`,
+            }).catch((err: Error) => {
+              console.error('[NotificationService] Automated 1-day urgent EMI email failed:', err.message);
+            });
           }
         }
       }

@@ -33,11 +33,14 @@ export interface IUseAssetCardReturn {
   hasMilestones: boolean;
   handleOpenDetails: () => void;
   handleDelete: (e: React.MouseEvent) => void;
+  handleEdit: (e: React.MouseEvent) => void;
 }
 
 export function useAssetCard(asset: IUniversalAsset): IUseAssetCardReturn {
   const setSelectedAssetId = useAssetStore((state) => state.setSelectedAssetId);
   const setIsDetailsModalOpen = useAssetStore((state) => state.setIsDetailsModalOpen);
+  const setAssetToEdit = useAssetStore((state) => state.setAssetToEdit);
+  const setIsEditModalOpen = useAssetStore((state) => state.setIsEditModalOpen);
   const { openDeleteModal } = useDeleteConfirm();
 
   // Calculate percentage of elapsed warranty time powered by moment.js
@@ -128,6 +131,15 @@ export function useAssetCard(asset: IUniversalAsset): IUseAssetCardReturn {
     [asset, openDeleteModal]
   );
 
+  const handleEdit = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setAssetToEdit(asset);
+      setIsEditModalOpen(true);
+    },
+    [asset, setAssetToEdit, setIsEditModalOpen]
+  );
+
   return {
     percentageElapsed,
     diffDays,
@@ -136,5 +148,6 @@ export function useAssetCard(asset: IUniversalAsset): IUseAssetCardReturn {
     hasMilestones,
     handleOpenDetails,
     handleDelete,
+    handleEdit,
   };
 }

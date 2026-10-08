@@ -7,30 +7,52 @@ import {
   Clock,
   PhoneCall,
   Trash2,
-  FileSpreadsheet,
   ArrowUpRight,
   Calendar,
+  ImageIcon,
+  FileText,
+  Pencil,
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { IUniversalAsset } from '@/types/asset.types';
 import { formatDisplayDate } from '@/lib/dateUtils';
 import { useAssetCard } from '@/hooks/useAssetCard';
+import { DocumentViewerModal } from '@/components/ui/DocumentViewerModal';
 
 interface AssetCardProps {
   asset: IUniversalAsset;
 }
 
 export function AssetCard({ asset }: AssetCardProps) {
+  const [isDocViewerOpen, setIsDocViewerOpen] = React.useState<boolean>(false);
   const {
     percentageElapsed,
     diffDays,
     catDetails,
     handleOpenDetails,
     handleDelete,
+    handleEdit,
   } = useAssetCard(asset);
 
   const CategoryIcon = catDetails.icon;
+
+  const isImageDoc = React.useMemo(() => {
+    const url = (asset.documentUrl || '').toLowerCase();
+    const name = (asset.documentName || '').toLowerCase();
+    return (
+      url.startsWith('data:image') ||
+      url.includes('/image/upload/') ||
+      url.endsWith('.jpg') ||
+      url.endsWith('.jpeg') ||
+      url.endsWith('.png') ||
+      url.endsWith('.webp') ||
+      name.endsWith('.jpg') ||
+      name.endsWith('.jpeg') ||
+      name.endsWith('.png') ||
+      name.endsWith('.webp')
+    );
+  }, [asset.documentUrl, asset.documentName]);
 
   const renderStatusBadge = () => {
     if (diffDays < 0) {
@@ -216,13 +238,42 @@ export function AssetCard({ asset }: AssetCardProps) {
             )}
 
             {/* Document Receipt Attachment Pill */}
-            {asset.documentName && (
-              <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100/70 px-3 py-1.5 rounded-xl border border-slate-200/60 min-w-0">
-                <FileSpreadsheet className="h-3.5 w-3.5 text-cyan-700 shrink-0" />
-                <span className="truncate flex-1 font-medium min-w-0">{asset.documentName}</span>
-                <span className="text-[10px] text-cyan-700 font-bold shrink-0 whitespace-nowrap">
-                  Receipt Attached
-                </span>
+            {(asset.documentName || asset.documentUrl) && (
+              <div className="flex items-center justify-between gap-2 text-xs text-slate-700 bg-slate-100/80 px-3 py-2 rounded-2xl border border-slate-200/70 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {isImageDoc && asset.documentUrl ? (
+                    <div className="h-7 w-7 rounded-lg overflow-hidden border border-cyan-200/80 bg-white shrink-0 flex items-center justify-center shadow-2xs">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={asset.documentUrl}
+                        alt="Receipt thumbnail"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : isImageDoc ? (
+                    <ImageIcon className="h-4 w-4 text-cyan-700 shrink-0" />
+                  ) : (
+                    <FileText className="h-4 w-4 text-cyan-700 shrink-0" />
+                  )}
+                  <span className="truncate font-semibold text-slate-800 text-[11px]">
+                    {asset.documentName || 'Receipt Document'}
+                  </span>
+                </div>
+
+                {asset.documentUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsDocViewerOpen(true);
+                    }}
+                    className="h-6 px-2 text-[10px] font-bold rounded-lg bg-white border border-slate-200 text-cyan-800 hover:bg-cyan-50 hover:text-cyan-900 shrink-0 cursor-pointer shadow-2xs"
+                  >
+                    {isImageDoc ? 'View Image' : 'View PDF'}
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -235,19 +286,45 @@ export function AssetCard({ asset }: AssetCardProps) {
             <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform shrink-0" />
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={handleDelete}
-            className="h-8 w-8 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-            title="Delete item"
-            aria-label="Delete item"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleEdit}
+              className="h-8 w-8 rounded-xl text-slate-400 hover:text-cyan-700 hover:bg-cyan-50 transition-colors cursor-pointer"
+              title="Edit item"
+              aria-label="Edit item"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              className="h-8 w-8 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+              title="Delete item"
+              aria-label="Delete item"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Direct Bill / Document Viewer Dialog */}
+      {asset.documentUrl && (
+        <DocumentViewerModal
+          open={isDocViewerOpen}
+          onOpenChange={setIsDocViewerOpen}
+          documentUrl={asset.documentUrl}
+          documentName={asset.documentName || 'Attached Receipt'}
+          title={asset.title}
+          subtitle={`${asset.providerOrBrand} • Attached Document`}
+        />
+      )}
     </motion.div>
   );
 }

@@ -24,6 +24,8 @@ export function useProfileForm() {
     clearMessages,
   } = useAuth();
 
+  const [isEditing, setIsEditing] = React.useState<boolean>(false);
+
   const form = useForm<IProfileHookFormData>({
     defaultValues: {
       fullName: user?.fullName || '',
@@ -47,11 +49,47 @@ export function useProfileForm() {
     }
   }, [isProfileModalOpen, user, reset]);
 
+  const startEditing = React.useCallback(() => {
+    clearMessages();
+    if (user) {
+      reset({
+        fullName: user.fullName || '',
+        phone: user.phone || '',
+        notificationEmailEnabled: user.notificationEmailEnabled,
+        notificationInAppEnabled: user.notificationInAppEnabled,
+      });
+    }
+    setIsEditing(true);
+  }, [clearMessages, user, reset]);
+
+  const cancelEditing = React.useCallback(() => {
+    clearMessages();
+    if (user) {
+      reset({
+        fullName: user.fullName || '',
+        phone: user.phone || '',
+        notificationEmailEnabled: user.notificationEmailEnabled,
+        notificationInAppEnabled: user.notificationInAppEnabled,
+      });
+    }
+    setIsEditing(false);
+  }, [clearMessages, user, reset]);
+
+  const handleClose = React.useCallback(() => {
+    setIsEditing(false);
+    clearMessages();
+    closeProfileModal();
+  }, [clearMessages, closeProfileModal]);
+
   const onValidSubmit: SubmitHandler<IProfileHookFormData> = async (data) => {
-    await updateUserProfile(data);
+    const success = await updateUserProfile(data);
+    if (success) {
+      setIsEditing(false);
+    }
   };
 
   const handleLogout = React.useCallback(async () => {
+    setIsEditing(false);
     await logoutUser();
   }, [logoutUser]);
 
@@ -62,11 +100,15 @@ export function useProfileForm() {
     setValue,
     user,
     isProfileModalOpen,
+    isEditing,
+    startEditing,
+    cancelEditing,
+    handleClose,
     isLoading,
     error,
     successMessage,
     handleLogout,
-    closeProfileModal,
+    closeProfileModal: handleClose,
     clearMessages,
   };
 }

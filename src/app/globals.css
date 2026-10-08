@@ -98,3 +98,39 @@ body {
   width: 0 !important;
   height: 0 !important;
 }
+
+/* Gradient shimmer animation for highlighted text */
+@keyframes gradient-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-text {
+  background-size: 200% auto;
+  animation: gradient-shimmer 4s ease infinite;
+}
+
+/* Tactile touch and click response for mobile and desktop */
+.touch-press {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+.touch-press:active {
+  transform: scale(0.96) !important;
+  filter: brightness(0.96);
+}
+
+@media (hover: hover) {
+  .touch-press:hover {
+    transform: translateY(-1px);
+  }
+}

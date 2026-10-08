@@ -4,23 +4,26 @@ import { useCallback } from 'react';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useAssetStore } from '@/stores/useAssetStore';
 import { useAiScanStore } from '@/stores/useAiScanStore';
+import { useEmiStore } from '@/stores/useEmiStore';
 
 export interface IUseProtectedActionReturn {
   isAuthenticated: boolean;
   requireAuth: (action: () => void) => void;
   handleOpenAddModal: () => void;
   handleOpenScanModal: () => void;
+  handleOpenAddEmiModal: () => void;
 }
 
 /**
  * Ensures only authenticated users can trigger actions like
- * scanning documents or adding assets. If unauthenticated, opens the Auth modal.
+ * scanning documents, adding assets, or adding EMI loans. If unauthenticated, opens the Auth modal.
  */
 export function useProtectedAction(): IUseProtectedActionReturn {
   const user = useAuthStore((state) => state.user);
   const openLoginModal = useAuthStore((state) => state.openLoginModal);
   const setIsAddModalOpen = useAssetStore((state) => state.setIsAddModalOpen);
   const setIsScanModalOpen = useAiScanStore((state) => state.setIsScanModalOpen);
+  const setIsAddEmiModalOpen = useEmiStore((state) => state.setIsAddEmiModalOpen);
 
   const isUserLoggedIn = Boolean(user);
 
@@ -47,10 +50,18 @@ export function useProtectedAction(): IUseProtectedActionReturn {
     });
   }, [requireAuth, setIsScanModalOpen]);
 
+  const handleOpenAddEmiModal = useCallback(() => {
+    requireAuth(() => {
+      setIsAddEmiModalOpen(true);
+    });
+  }, [requireAuth, setIsAddEmiModalOpen]);
+
   return {
     isAuthenticated: isUserLoggedIn,
     requireAuth,
     handleOpenAddModal,
     handleOpenScanModal,
+    handleOpenAddEmiModal,
   };
 }
+

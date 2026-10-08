@@ -14,6 +14,7 @@ interface AiScanState {
   extractedData: IAiExtractionResult | null;
   isScanModalOpen: boolean;
   isReviewModalOpen: boolean;
+  isViewDocOpen: boolean;
   errorMessage: string | null;
   isDragOver: boolean;
 
@@ -21,6 +22,8 @@ interface AiScanState {
   setIsDragOver: (isDragOver: boolean) => void;
   setIsScanModalOpen: (open: boolean) => void;
   setIsReviewModalOpen: (open: boolean) => void;
+  setIsViewDocOpen: (open: boolean) => void;
+  setCloudinaryUrl: (url: string) => void;
   startScan: (payload: IScanPayload) => void;
   setScanningProgress: (text: string) => void;
   setScanSuccess: (data: IAiExtractionResult) => void;
@@ -39,12 +42,21 @@ export const useAiScanStore = create<AiScanState>((set) => ({
   extractedData: null,
   isScanModalOpen: false,
   isReviewModalOpen: false,
+  isViewDocOpen: false,
   errorMessage: null,
   isDragOver: false,
 
   setIsDragOver: (isDragOver) => set({ isDragOver }),
   setIsScanModalOpen: (isScanModalOpen) => set({ isScanModalOpen }),
   setIsReviewModalOpen: (isReviewModalOpen) => set({ isReviewModalOpen }),
+  setIsViewDocOpen: (isViewDocOpen) => set({ isViewDocOpen }),
+
+  setCloudinaryUrl: (url) =>
+    set((state) => ({
+      scanPayload: state.scanPayload
+        ? { ...state.scanPayload, cloudinaryUrl: url }
+        : null,
+    })),
 
   startScan: (scanPayload) =>
     set({
@@ -90,6 +102,7 @@ export const useAiScanStore = create<AiScanState>((set) => ({
       scanProgressText: '',
       extractedData: null,
       isReviewModalOpen: false,
+      isViewDocOpen: false,
       errorMessage: null,
     }),
 }));

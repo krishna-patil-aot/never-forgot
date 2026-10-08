@@ -5,12 +5,12 @@ import {
   ScanLine,
   Bell,
   LayoutGrid,
-  Layers,
   User,
   LogIn,
   Sparkles,
   LogOut,
   Plus,
+  CreditCard,
 } from "lucide-react";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,8 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const currentCategory = useAssetStore((state) => state.filter.category);
   const setFilterCategory = useAssetStore((state) => state.setFilterCategory);
-  const { handleOpenAddModal, handleOpenScanModal } = useProtectedAction();
+  const { handleOpenAddModal, handleOpenScanModal, handleOpenAddEmiModal } =
+    useProtectedAction();
   const notifications = useNotificationStore((state) => state.notifications);
   const setIsNotificationPanelOpen = useNotificationStore(
     (state) => state.setIsNotificationPanelOpen,
@@ -67,7 +68,10 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center justify-between h-16">
             {/* Brand Logo & Vault Tag */}
             <div className="flex items-center space-x-3">
-              <AppLogo size={40} className="rounded-2xl shadow-md shadow-cyan-600/20" />
+              <AppLogo
+                size={40}
+                className="rounded-2xl shadow-md shadow-cyan-600/20"
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900">
@@ -121,7 +125,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                       <p className="text-xs font-bold text-slate-800 leading-tight group-hover:text-cyan-800">
                         {user?.fullName.split(" ")[0]}
                       </p>
-                      <p className="text-[10px] text-slate-500 leading-none">Account</p>
+                      <p className="text-[10px] text-slate-500 leading-none">
+                        Account
+                      </p>
                     </div>
                   </button>
 
@@ -196,49 +202,82 @@ export function AppLayout({ children }: AppLayoutProps) {
             <span className="text-[10px] leading-tight">Items</span>
           </button>
 
-          {/* 2. Filter / Categories Tab */}
+          {/* 2. EMI Loans Tab */}
           <button
             type="button"
             onClick={() => {
-              setActiveTab("categories");
-              const el = document.getElementById("category-filter-section");
-              if (el) el.scrollIntoView({ behavior: "smooth" });
+              setActiveTab("emi");
+              window.scrollTo({ top: 0, behavior: "smooth" });
             }}
             className={`flex flex-col items-center justify-center w-full h-full py-1 rounded-xl transition-all cursor-pointer ${
-              activeTab === "categories"
-                ? "text-cyan-700 font-bold"
+              activeTab === "emi"
+                ? "text-teal-700 font-bold"
                 : "text-slate-500 hover:text-slate-800 font-medium"
             }`}
           >
-            <Layers className="h-5 w-5 mb-0.5 shrink-0" />
-            <span className="text-[10px] leading-tight">Filter</span>
+            <CreditCard className="h-5 w-5 mb-0.5 shrink-0" />
+            <span className="text-[10px] leading-tight">EMIs</span>
           </button>
 
-          {/* 3. Central Scan Bill Button (Centered & Elevated) */}
+          {/* 3. Central Dynamic Action Button (Centered & Elevated) */}
           <div className="relative flex flex-col items-center justify-center w-full h-full">
             <button
               type="button"
-              onClick={handleOpenScanModal}
-              className="absolute -top-5 flex flex-col items-center group focus:outline-none cursor-pointer"
-              aria-label="Scan bill"
+              onClick={
+                activeTab === "emi"
+                  ? handleOpenAddEmiModal
+                  : handleOpenScanModal
+              }
+              className="absolute -top-5 flex flex-col items-center group focus:outline-none cursor-pointer touch-press"
+              aria-label={activeTab === "emi" ? "Add EMI Loan" : "Scan bill"}
             >
-              <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-600 to-cyan-700 shadow-lg shadow-cyan-600/35 group-active:scale-95 transition-transform flex items-center justify-center border-2 border-white ring-2 ring-cyan-100">
-                <ScanLine className="h-6 w-6 text-white" />
+              <div
+                className={`h-12 w-12 rounded-2xl shadow-lg group-active:scale-95 transition-transform flex items-center justify-center border-2 border-white ${
+                  activeTab === "emi"
+                    ? "bg-gradient-to-tr from-teal-600 via-emerald-600 to-teal-700 shadow-teal-600/35 ring-2 ring-teal-100"
+                    : "bg-gradient-to-tr from-cyan-600 via-teal-600 to-cyan-700 shadow-cyan-600/35 ring-2 ring-cyan-100"
+                }`}
+              >
+                {activeTab === "emi" ? (
+                  <Plus className="h-6 w-6 text-white stroke-[2.5]" />
+                ) : (
+                  <ScanLine className="h-6 w-6 text-white" />
+                )}
               </div>
-              <span className="text-[10px] font-bold text-cyan-700 mt-1 leading-tight">
-                Scan Bill
+              <span
+                className={`text-[10px] font-bold mt-1 leading-tight ${
+                  activeTab === "emi" ? "text-teal-700" : "text-cyan-700"
+                }`}
+              >
+                {activeTab === "emi" ? "Add EMI" : "Scan AI"}
               </span>
             </button>
           </div>
 
-          {/* 4. Manual Add Item Button */}
+          {/* 4. Manual Add Item / Add EMI Button */}
           <button
             type="button"
-            onClick={handleOpenAddModal}
-            className="flex flex-col items-center justify-center w-full h-full py-1 text-slate-500 hover:text-slate-800 transition-all cursor-pointer font-medium rounded-xl"
+            onClick={
+              activeTab === "emi"
+                ? handleOpenAddEmiModal
+                : handleOpenAddModal
+            }
+            className={`flex flex-col items-center justify-center w-full h-full py-1 transition-all cursor-pointer font-medium rounded-xl touch-press ${
+              activeTab === "emi"
+                ? "text-teal-700 hover:text-teal-800"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
           >
-            <Plus className="h-5 w-5 mb-0.5 shrink-0 text-slate-600" />
-            <span className="text-[10px] leading-tight">Add Item</span>
+            <Plus
+              className={`h-5 w-5 mb-0.5 shrink-0 ${
+                activeTab === "emi"
+                  ? "text-teal-600 stroke-[2.5]"
+                  : "text-slate-600"
+              }`}
+            />
+            <span className="text-[10px] leading-tight">
+              {activeTab === "emi" ? "Add EMI" : "Add Item"}
+            </span>
           </button>
 
           {/* 5. Profile / Account Tab */}
@@ -257,4 +296,3 @@ export function AppLayout({ children }: AppLayoutProps) {
     </div>
   );
 }
-

@@ -71,4 +71,17 @@ export interface IAssetFormData {
   sumInsured?: number;
   premiumAmount?: number;
   tpaHelpline?: string;
+  documentUrl?: string;
+  documentName?: string;
+}
+
+export interface IAttachedDocument {
+  file: File;
+  dataUrl: string;
+  name: string;
+  originalSize: number;
+  compressedSize: number;
+  savedPercentage: number;
+  isUploading?: boolean;
+  uploadedUrl?: string;
 }

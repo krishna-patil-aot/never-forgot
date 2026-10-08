@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
 import {
   PlusCircle,
   Wrench,
@@ -8,7 +8,10 @@ import {
   HeartHandshake,
   CheckCircle2,
   FileText,
-} from 'lucide-react';
+  UploadCloud,
+  Trash2,
+  AlertCircle,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,19 +19,21 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { DatePicker } from '@/components/ui/date-picker';
-import { useAssetStore } from '@/stores/useAssetStore';
-import { useAssetOperations } from '@/hooks/useAssetOperations';
-import { AssetCategory } from '@/types/asset.types';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { DatePicker } from "@/components/ui/date-picker";
+import { useAssetStore } from "@/stores/useAssetStore";
+import { useAssetOperations } from "@/hooks/useAssetOperations";
+import { AssetCategory } from "@/types/asset.types";
+import { formatBytes } from "@/lib/compression";
 
 export function AddAssetModal() {
   const isAddModalOpen = useAssetStore((state) => state.isAddModalOpen);
   const setIsAddModalOpen = useAssetStore((state) => state.setIsAddModalOpen);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -42,6 +47,10 @@ export function AddAssetModal() {
     isInsurance,
     isSubmitting,
     handleNonNegativeKeyDown,
+    attachedDoc,
+    docError,
+    handleDocumentSelect,
+    handleRemoveDocument,
   } = useAssetOperations();
 
   return (
@@ -57,7 +66,8 @@ export function AddAssetModal() {
                 Add an Item
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5 leading-normal">
-                Save your bill, warranty period, free service dates, or policy renewal details.
+                Save your bill, warranty period, free service dates, or policy
+                renewal details.
               </DialogDescription>
             </div>
           </div>
@@ -66,14 +76,20 @@ export function AddAssetModal() {
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {/* Category Selector */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Select Category</Label>
+            <Label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Select Category
+            </Label>
             <div className="grid grid-cols-2 min-[440px]:grid-cols-3 gap-1.5 sm:gap-2">
               {[
-                { id: 'electronics', label: 'Electronics', icon: ShieldCheck },
-                { id: 'vehicle', label: 'Vehicle / Bike', icon: Wrench },
-                { id: 'health_insurance', label: 'Health Policy', icon: HeartHandshake },
-                { id: 'home_amc', label: 'Home & AMC', icon: CheckCircle2 },
-                { id: 'personal_doc', label: 'Personal Doc', icon: FileText },
+                { id: "electronics", label: "Electronics", icon: ShieldCheck },
+                { id: "vehicle", label: "Vehicle / Bike", icon: Wrench },
+                {
+                  id: "health_insurance",
+                  label: "Health Policy",
+                  icon: HeartHandshake,
+                },
+                { id: "home_amc", label: "Home & AMC", icon: CheckCircle2 },
+                { id: "personal_doc", label: "Personal Doc", icon: FileText },
               ].map((cat) => {
                 const Icon = cat.icon;
                 const isSelected = formData.category === cat.id;
@@ -82,15 +98,19 @@ export function AddAssetModal() {
                     type="button"
                     key={cat.id}
                     variant="outline"
-                    onClick={() => handleCategoryChange(cat.id as AssetCategory)}
+                    onClick={() =>
+                      handleCategoryChange(cat.id as AssetCategory)
+                    }
                     className={`h-auto flex items-center justify-start gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl border text-left cursor-pointer transition-all font-normal whitespace-normal ${
                       isSelected
-                        ? 'border-cyan-600 bg-cyan-50/80 text-cyan-900 font-semibold shadow-xs ring-1 ring-cyan-600/30 hover:bg-cyan-100/70'
-                        : 'border-slate-200 bg-slate-50/80 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? "border-cyan-600 bg-cyan-50/80 text-cyan-900 font-semibold shadow-xs ring-1 ring-cyan-600/30 hover:bg-cyan-100/70"
+                        : "border-slate-200 bg-slate-50/80 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5 shrink-0 text-cyan-600" />
-                    <span className="text-[11px] sm:text-xs font-medium leading-tight whitespace-normal break-words">{cat.label}</span>
+                    <span className="text-[11px] sm:text-xs font-medium leading-tight whitespace-normal break-words">
+                      {cat.label}
+                    </span>
                   </Button>
                 );
               })}
@@ -102,13 +122,13 @@ export function AddAssetModal() {
             <div className="sm:col-span-2 space-y-1">
               <Label>Item or Policy Name *</Label>
               <Input
-                {...register('title')}
+                {...register("title")}
                 placeholder={
-                  formData.category === 'vehicle'
-                    ? 'e.g. Royal Enfield Hunter 350'
+                  formData.category === "vehicle"
+                    ? "e.g. Royal Enfield Hunter 350"
                     : isInsurance
-                    ? 'e.g. Star Health Family Care'
-                    : 'e.g. MacBook Pro M3 or iPhone 15'
+                      ? "e.g. Star Health Family Care"
+                      : "e.g. MacBook Pro M3 or iPhone 15"
                 }
                 className="text-sm"
               />
@@ -121,32 +141,34 @@ export function AddAssetModal() {
             <div className="space-y-1">
               <Label>Brand or Company *</Label>
               <Input
-                {...register('providerOrBrand')}
+                {...register("providerOrBrand")}
                 placeholder={
-                  formData.category === 'vehicle'
-                    ? 'e.g. Royal Enfield'
+                  formData.category === "vehicle"
+                    ? "e.g. Royal Enfield"
                     : isInsurance
-                    ? 'e.g. Star Health'
-                    : 'e.g. Apple / Samsung'
+                      ? "e.g. Star Health"
+                      : "e.g. Apple / Samsung"
                 }
                 className="text-sm"
               />
               {formErrors.providerOrBrand && (
-                <p className="text-xs text-destructive">{formErrors.providerOrBrand}</p>
+                <p className="text-xs text-destructive">
+                  {formErrors.providerOrBrand}
+                </p>
               )}
             </div>
 
             {/* Serial / Reg / Policy Number */}
             <div className="space-y-1">
               <Label>
-                {formData.category === 'vehicle'
-                  ? 'Registration / Chasis No.'
+                {formData.category === "vehicle"
+                  ? "Registration / Chasis No."
                   : isInsurance
-                  ? 'Policy Number'
-                  : 'Serial / IMEI Number'}
+                    ? "Policy Number"
+                    : "Serial / IMEI Number"}
               </Label>
               <Input
-                {...register('identifierNumber')}
+                {...register("identifierNumber")}
                 placeholder="Optional ID / Serial"
                 className="text-sm"
               />
@@ -164,7 +186,9 @@ export function AddAssetModal() {
                 }}
               />
               {formErrors.startDate && (
-                <p className="text-xs text-destructive">{formErrors.startDate}</p>
+                <p className="text-xs text-destructive">
+                  {formErrors.startDate}
+                </p>
               )}
             </div>
 
@@ -175,23 +199,25 @@ export function AddAssetModal() {
                 {[6, 12, 24, 36].map((months) => (
                   <Badge
                     key={months}
-                    variant={formData.validityMonths === months ? 'cyan' : 'outline'}
+                    variant={
+                      formData.validityMonths === months ? "cyan" : "outline"
+                    }
                     className={`cursor-pointer px-2.5 py-1 text-xs font-semibold ${
                       formData.validityMonths === months
-                        ? 'bg-cyan-600 text-white hover:bg-cyan-700'
-                        : 'hover:bg-slate-100'
+                        ? "bg-cyan-600 text-white hover:bg-cyan-700"
+                        : "hover:bg-slate-100"
                     }`}
                     onClick={() =>
                       updateStartDateOrMonths(formData.startDate, months)
                     }
                   >
                     {months === 12
-                      ? '1 Year'
+                      ? "1 Year"
                       : months === 24
-                      ? '2 Years'
-                      : months === 36
-                      ? '3 Years'
-                      : `${months}m`}
+                        ? "2 Years"
+                        : months === 36
+                          ? "3 Years"
+                          : `${months}m`}
                   </Badge>
                 ))}
               </div>
@@ -204,7 +230,7 @@ export function AddAssetModal() {
                 value={formData.expiryOrRenewalDate}
                 onChange={(val) => {
                   if (val) {
-                    updateField('expiryOrRenewalDate', val);
+                    updateField("expiryOrRenewalDate", val);
                   }
                 }}
               />
@@ -225,9 +251,11 @@ export function AddAssetModal() {
                     min="0"
                     step="any"
                     onKeyDown={handleNonNegativeKeyDown}
-                    {...register('sumInsured', {
+                    {...register("sumInsured", {
                       setValueAs: (v) =>
-                        v === '' || isNaN(Number(v)) ? undefined : Math.max(0, Number(v)),
+                        v === "" || isNaN(Number(v))
+                          ? undefined
+                          : Math.max(0, Number(v)),
                     })}
                     placeholder="e.g. 500000"
                     className="text-sm"
@@ -240,9 +268,11 @@ export function AddAssetModal() {
                     min="0"
                     step="any"
                     onKeyDown={handleNonNegativeKeyDown}
-                    {...register('premiumAmount', {
+                    {...register("premiumAmount", {
                       setValueAs: (v) =>
-                        v === '' || isNaN(Number(v)) ? undefined : Math.max(0, Number(v)),
+                        v === "" || isNaN(Number(v))
+                          ? undefined
+                          : Math.max(0, Number(v)),
                     })}
                     placeholder="e.g. 12500"
                     className="text-sm"
@@ -251,7 +281,7 @@ export function AddAssetModal() {
                 <div className="sm:col-span-2 space-y-1">
                   <Label>TPA Helpline Contact Number</Label>
                   <Input
-                    {...register('tpaHelpline')}
+                    {...register("tpaHelpline")}
                     placeholder="e.g. 1800 425 2255"
                     className="text-sm"
                   />
@@ -264,7 +294,9 @@ export function AddAssetModal() {
               <div className="sm:col-span-2 p-3 bg-cyan-50/70 border border-cyan-200 rounded-xl flex items-center gap-2">
                 <Wrench className="h-4 w-4 text-cyan-700 shrink-0" />
                 <p className="text-xs text-cyan-900 font-medium">
-                  <strong>Free Service Schedule Included:</strong> We automatically set up your 1st Free Service (45 days), 2nd Free Service (180 days), and 3rd Free Service (365 days).
+                  <strong>Free Service Schedule Included:</strong> We
+                  automatically set up your 1st Free Service (45 days), 2nd Free
+                  Service (180 days), and 3rd Free Service (365 days).
                 </p>
               </div>
             )}
@@ -278,15 +310,120 @@ export function AddAssetModal() {
                   min="0"
                   step="any"
                   onKeyDown={handleNonNegativeKeyDown}
-                  {...register('price', {
+                  {...register("price", {
                     setValueAs: (v) =>
-                      v === '' || isNaN(Number(v)) ? undefined : Math.max(0, Number(v)),
+                      v === "" || isNaN(Number(v))
+                        ? undefined
+                        : Math.max(0, Number(v)),
                   })}
                   placeholder="e.g. 85000"
                   className="text-sm"
                 />
               </div>
             )}
+
+            {/* Document / Invoice Attachment Field (Image or PDF) */}
+            <div className="sm:col-span-2 space-y-1.5 pt-1">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold text-slate-700">
+                  Bill, Invoice or Document Attachment
+                </Label>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    void handleDocumentSelect(e.target.files[0]);
+                  }
+                }}
+              />
+
+              {docError && (
+                <div className="p-2 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{docError}</span>
+                </div>
+              )}
+
+              {attachedDoc ? (
+                <div className="p-3 rounded-2xl bg-cyan-50/60 border border-cyan-200/80 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {attachedDoc.file.type.startsWith("image/") ? (
+                      <div className="h-10 w-10 rounded-xl overflow-hidden bg-white border border-cyan-200 shrink-0 flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={attachedDoc.dataUrl}
+                          alt="Attached receipt"
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-10 w-10 rounded-xl bg-white border border-cyan-200 text-cyan-700 shrink-0 flex items-center justify-center">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 truncate">
+                        {attachedDoc.name}
+                      </p>
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5 flex-wrap">
+                        <span>{formatBytes(attachedDoc.originalSize)}</span>
+                        <span>→</span>
+                        <strong className="text-cyan-800">
+                          {formatBytes(attachedDoc.compressedSize)}
+                        </strong>
+                        {attachedDoc.savedPercentage > 0 && (
+                          <Badge
+                            variant="success"
+                            className="text-[9px] px-1.5 py-0 font-bold bg-emerald-100 text-emerald-800 border-emerald-300"
+                          >
+                            {attachedDoc.savedPercentage}% saved
+                          </Badge>
+                        )}
+                        {attachedDoc.isUploading && (
+                          <span className="text-cyan-600 animate-pulse font-medium">
+                            • Syncing to cloud...
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRemoveDocument}
+                    className="h-8 w-8 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer shrink-0"
+                    title="Remove attachment"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3.5 sm:p-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-cyan-400 bg-slate-50/70 hover:bg-cyan-50/30 transition-all cursor-pointer flex items-center justify-center gap-3 text-center group"
+                >
+                  <div className="h-9 w-9 rounded-xl bg-white border border-slate-200 text-cyan-700 flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                    <UploadCloud className="h-5 w-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-800 group-hover:text-cyan-800 transition-colors">
+                      Attach Bill, Invoice or Document
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      JPG, PNG, WebP or PDF
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-3 border-t border-border/40">
@@ -306,7 +443,7 @@ export function AddAssetModal() {
               disabled={isSubmitting}
               className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer bg-cyan-600 hover:bg-cyan-700 text-white shadow-xs"
             >
-              {isSubmitting ? 'Saving...' : 'Save Item'}
+              {isSubmitting ? "Saving..." : "Save Item"}
             </Button>
           </DialogFooter>
         </form>

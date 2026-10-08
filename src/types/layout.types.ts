@@ -1,7 +1,7 @@
 import { ElementType } from 'react';
 import { AssetCategory } from './asset.types';
 
-export type ConsumerTab = 'vault' | 'categories' | 'scan' | 'alerts' | 'profile';
+export type ConsumerTab = 'vault' | 'categories' | 'scan' | 'alerts' | 'profile' | 'emi';
 
 export interface INavigationCategory {
   id: AssetCategory | 'all';

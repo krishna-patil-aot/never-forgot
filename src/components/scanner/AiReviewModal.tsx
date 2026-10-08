@@ -5,6 +5,7 @@ import {
   Sparkles,
   FileCheck,
   CheckCircle,
+  Eye,
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,14 +29,19 @@ import {
 } from '@/components/ui/select';
 import { useInvoiceScanner } from '@/hooks/useInvoiceScanner';
 import { AssetCategory } from '@/types/asset.types';
+import { DocumentViewerModal } from '@/components/ui/DocumentViewerModal';
 
 export function AiReviewModal() {
   const {
     isReviewModalOpen,
+    isViewDocOpen,
+    scanPayload,
     extractedData,
     setIsReviewModalOpen,
+    setIsViewDocOpen,
     updateExtractedField,
     handleConfirmAndSave,
+    isSaving,
     resetScan,
     handleNonNegativeKeyDown,
     handlePriceChange,
@@ -97,7 +103,19 @@ export function AiReviewModal() {
                 Review AI Extracted Details
               </DialogTitle>
             </div>
-            <div className="self-start min-[480px]:self-auto">
+            <div className="flex items-center gap-2 self-start min-[480px]:self-auto">
+              {(scanPayload?.dataUrl || scanPayload?.cloudinaryUrl) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsViewDocOpen(true)}
+                  className="h-7 px-2.5 text-xs font-bold text-cyan-800 bg-cyan-50 hover:bg-cyan-100 border-cyan-200 rounded-lg cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                >
+                  <Eye className="h-3.5 w-3.5 text-cyan-700" />
+                  <span>View Bill</span>
+                </Button>
+              )}
               <Badge variant="success" className="text-xs font-semibold px-2 py-0.5">
                 <Sparkles className="h-3 w-3 mr-1" />
                 {extractedData.confidenceScore}% Confidence
@@ -105,14 +123,39 @@ export function AiReviewModal() {
             </div>
           </div>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5 leading-normal">
-            Please verify the extracted values below. You can adjust any field before saving to your vault.
+            Please verify the extracted values below. You can view your original document to verify the information.
           </DialogDescription>
         </DialogHeader>
 
-        {/* AI Insight Pill */}
-        <div className="p-3 rounded-xl bg-cyan-50/80 border border-cyan-200/80 text-xs text-cyan-950 flex items-start gap-2">
-          <Sparkles className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
-          <p className="leading-relaxed">{extractedData.rawSummary}</p>
+        {/* AI Insight Pill & Document Verification Strip */}
+        <div className="space-y-2">
+          <div className="p-3 rounded-xl bg-cyan-50/80 border border-cyan-200/80 text-xs text-cyan-950 flex items-start gap-2">
+            <Sparkles className="h-4 w-4 text-cyan-600 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">{extractedData.rawSummary}</p>
+          </div>
+
+          {(scanPayload?.dataUrl || scanPayload?.cloudinaryUrl) && (
+            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <Eye className="h-4 w-4 text-cyan-700 shrink-0" />
+                <span className="font-semibold text-slate-800 truncate">
+                  {scanPayload?.fileName || 'Attached Bill / Receipt'}
+                </span>
+                <span className="text-[10px] text-slate-500 hidden sm:inline">
+                  • Click to verify document
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsViewDocOpen(true)}
+                className="h-7 px-2.5 text-xs font-bold rounded-lg border-cyan-300 text-cyan-800 hover:bg-cyan-50 shrink-0 cursor-pointer"
+              >
+                View Document
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Form Fields */}
@@ -263,14 +306,34 @@ export function AiReviewModal() {
             type="button"
             variant="default"
             size="sm"
+            disabled={isSaving}
             className="w-full sm:w-auto h-10 sm:h-9 text-xs sm:text-sm font-semibold cursor-pointer flex items-center justify-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white shadow-xs"
             onClick={handleConfirmAndSave}
           >
-            <CheckCircle className="h-4 w-4" />
-            <span>Confirm & Save Item</span>
+            {isSaving ? (
+              <>
+                <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin mr-1" />
+                <span>Saving Item...</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                <span>Confirm & Save Item</span>
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Verification Document Viewer Dialog */}
+      <DocumentViewerModal
+        open={isViewDocOpen}
+        onOpenChange={setIsViewDocOpen}
+        documentUrl={scanPayload?.dataUrl || scanPayload?.cloudinaryUrl}
+        documentName={scanPayload?.fileName || 'Scanned Bill / Receipt'}
+        title="Verify Original Bill / Invoice"
+        subtitle="Cross-check details against your uploaded invoice"
+      />
     </Dialog>
   );
 }

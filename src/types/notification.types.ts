@@ -1,11 +1,17 @@
 import { AssetCategory } from './asset.types';
 
-export type NotificationType = 'warranty_expiry' | 'service_due' | 'policy_renewal';
+export type NotificationType =
+  | 'warranty_expiry'
+  | 'service_due'
+  | 'policy_renewal'
+  | 'emi_reminder_7d'
+  | 'emi_reminder_1d';
 export type NotificationPriority = 'high' | 'medium' | 'low';
 
 export interface INotification {
   id: string;
-  assetId: string;
+  assetId?: string;
+  emiId?: string;
   assetTitle: string;
   category: AssetCategory;
   type: NotificationType;

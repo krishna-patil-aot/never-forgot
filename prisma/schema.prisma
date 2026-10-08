@@ -23,6 +23,7 @@ model User {
   updatedAt                DateTime       @updatedAt
   assets                   Asset[]
   notifications            Notification[]
+  emiReminders             EmiReminder[]
 }
 
 model OtpCode {
@@ -102,10 +103,11 @@ model Notification {
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   assetId   String?
+  emiId     String?
   title     String
   message   String
   category  String
-  type      String // "expiry_warning_30d" | "expiry_warning_7d" | "milestone_due" | "policy_renewal" | "system"
+  type      String // "expiry_warning_30d" | "expiry_warning_7d" | "milestone_due" | "policy_renewal" | "system" | "emi_reminder_7d" | "emi_reminder_1d"
   isRead    Boolean   @default(false)
   readAt    DateTime?
   link      String?
@@ -114,6 +116,36 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+}
+
+model EmiReminder {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String    // e.g. "Dream Home Loan - HDFC"
+  loanType        String    // "home_loan" | "car_loan" | "personal_loan" | "bike_loan" | "education_loan" | "gold_loan" | "consumer_loan" | "business_loan" | "other"
+  lenderName      String    // e.g. "HDFC Bank", "State Bank of India"
+  accountNumber   String?   // Loan A/c No.
+  emiAmount       Float     // Monthly EMI amount in ₹
+  dueDay          Int       // 1 to 31 (day of month)
+  totalLoanAmount Float?    // Total principal amount in ₹
+  interestRate    Float?    // e.g. 8.5 (% p.a.)
+  tenureMonths    Int?      // Total months
+  startDate       DateTime  // Loan start date
+  endDate         DateTime? // Expected loan completion date
+  autoDebit       Boolean   @default(true)
+  debitAccount    String?   // Bank / Account description for auto-debit
+  status          String    @default("active") // "active" | "completed" | "paused"
+  documentUrl     String?   // Sanction letter, loan doc or statement
+  documentName    String?
+  notes           String?
+  lastPaidMonth   String?   // "YYYY-MM" format, e.g. "2026-10"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([dueDay])
+  @@index([status])
 }
 
 model AiAuditLog {

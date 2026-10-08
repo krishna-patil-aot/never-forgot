@@ -17,6 +17,8 @@ interface AssetState {
   isDetailsModalOpen: boolean;
   assetToDelete: IUniversalAsset | null;
   isDeleteModalOpen: boolean;
+  assetToEdit: IUniversalAsset | null;
+  isEditModalOpen: boolean;
 
   // Actions
   setFilterCategory: (category: AssetCategory | 'all') => void;
@@ -28,6 +30,8 @@ interface AssetState {
   setIsDetailsModalOpen: (open: boolean) => void;
   setAssetToDelete: (asset: IUniversalAsset | null) => void;
   setIsDeleteModalOpen: (open: boolean) => void;
+  setAssetToEdit: (asset: IUniversalAsset | null) => void;
+  setIsEditModalOpen: (open: boolean) => void;
 
   // Asset CRUD
   addAsset: (asset: IUniversalAsset) => void;
@@ -49,6 +53,8 @@ export const useAssetStore = create<AssetState>((set) => ({
   isDetailsModalOpen: false,
   assetToDelete: null,
   isDeleteModalOpen: false,
+  assetToEdit: null,
+  isEditModalOpen: false,
 
   setFilterCategory: (category) =>
     set((state) => ({ filter: { ...state.filter, category } })),
@@ -67,9 +73,15 @@ export const useAssetStore = create<AssetState>((set) => ({
   setIsDetailsModalOpen: (isDetailsModalOpen) => set({ isDetailsModalOpen }),
   setAssetToDelete: (assetToDelete) => set({ assetToDelete }),
   setIsDeleteModalOpen: (isDeleteModalOpen) => set({ isDeleteModalOpen }),
+  setAssetToEdit: (assetToEdit) => set({ assetToEdit }),
+  setIsEditModalOpen: (isEditModalOpen) => set({ isEditModalOpen }),
 
   addAsset: (newAsset) =>
-    set((state) => ({ assets: [newAsset, ...state.assets] })),
+    set((state) => {
+      const alreadyExists = state.assets.some((a) => a.id === newAsset.id);
+      if (alreadyExists) return state;
+      return { assets: [newAsset, ...state.assets] };
+    }),
 
   updateAsset: (id, updated) =>
     set((state) => ({

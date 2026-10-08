@@ -4,12 +4,14 @@ import * as React from 'react';
 import {
   CheckCircle,
   Circle,
-  FileSpreadsheet,
   Trash2,
   Wrench,
-  ExternalLink,
   Calendar,
   ShieldCheck,
+  ImageIcon,
+  FileText,
+  Eye,
+  Pencil,
 } from 'lucide-react';
 import {
   Dialog,
@@ -25,18 +27,39 @@ import { useAssetStore } from '@/stores/useAssetStore';
 import { formatDisplayDate } from '@/lib/dateUtils';
 import { useAssetApi } from '@/hooks/useAssetApi';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
+import { DocumentViewerModal } from '@/components/ui/DocumentViewerModal';
 
 export function AssetDetailsModal() {
+  const [isDocViewerOpen, setIsDocViewerOpen] = React.useState<boolean>(false);
   const selectedAssetId = useAssetStore((state) => state.selectedAssetId);
   const isDetailsModalOpen = useAssetStore((state) => state.isDetailsModalOpen);
   const setIsDetailsModalOpen = useAssetStore(
     (state) => state.setIsDetailsModalOpen
   );
+  const setAssetToEdit = useAssetStore((state) => state.setAssetToEdit);
+  const setIsEditModalOpen = useAssetStore((state) => state.setIsEditModalOpen);
   const assets = useAssetStore((state) => state.assets);
   const { toggleMilestone } = useAssetApi();
   const { openDeleteModal } = useDeleteConfirm();
 
   const asset = assets.find((a) => a.id === selectedAssetId);
+
+  const isImageDoc = React.useMemo(() => {
+    const url = (asset?.documentUrl || '').toLowerCase();
+    const name = (asset?.documentName || '').toLowerCase();
+    return (
+      url.startsWith('data:image') ||
+      url.includes('/image/upload/') ||
+      url.endsWith('.jpg') ||
+      url.endsWith('.jpeg') ||
+      url.endsWith('.png') ||
+      url.endsWith('.webp') ||
+      name.endsWith('.jpg') ||
+      name.endsWith('.jpeg') ||
+      name.endsWith('.png') ||
+      name.endsWith('.webp')
+    );
+  }, [asset?.documentUrl, asset?.documentName]);
 
   if (!asset) return null;
 
@@ -234,31 +257,66 @@ export function AssetDetailsModal() {
           )}
 
           {/* Attached Document / Invoice Card */}
-          {asset.documentName && (
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/80 flex items-center justify-between gap-2 min-w-0 overflow-hidden">
-              <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
-                <div className="h-9 w-9 rounded-xl bg-cyan-50 border border-cyan-150 flex items-center justify-center text-cyan-700 shrink-0">
-                  <FileSpreadsheet className="h-4.5 w-4.5" />
+          {(asset.documentName || asset.documentUrl) && (
+            <div className="p-3 sm:p-4 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-3 min-w-0 overflow-hidden">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+                  {isImageDoc && asset.documentUrl ? (
+                    <div className="h-10 w-10 rounded-xl overflow-hidden border border-cyan-200 bg-white shrink-0 flex items-center justify-center shadow-2xs">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={asset.documentUrl}
+                        alt="Document thumbnail"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-xl bg-cyan-50 border border-cyan-150 flex items-center justify-center text-cyan-700 shrink-0">
+                      {isImageDoc ? <ImageIcon className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="text-xs font-bold text-slate-900 truncate" title={asset.documentName}>
+                      {asset.documentName || 'Attached Invoice Document'}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      {isImageDoc ? 'Image Receipt Attached' : 'Official PDF Document Attached'}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <p className="text-xs font-bold text-slate-800 truncate" title={asset.documentName}>
-                    {asset.documentName}
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate">Official Receipt Attached</p>
-                </div>
+
+                {asset.documentUrl && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => setIsDocViewerOpen(true)}
+                    className="h-8 px-3 text-xs font-bold rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white shrink-0 cursor-pointer shadow-xs flex items-center gap-1.5"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{isImageDoc ? 'View Image' : 'View PDF'}</span>
+                  </Button>
+                )}
               </div>
-              {asset.documentUrl && (
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2.5 text-[11px] font-bold rounded-lg shrink-0 cursor-pointer"
+
+              {/* Inline interactive thumbnail preview for images */}
+              {isImageDoc && asset.documentUrl && (
+                <div
+                  onClick={() => setIsDocViewerOpen(true)}
+                  className="group relative w-full h-36 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer flex items-center justify-center"
                 >
-                  <a href={asset.documentUrl} target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    View
-                  </a>
-                </Button>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={asset.documentUrl}
+                    alt={asset.documentName || 'Receipt'}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold backdrop-blur-2xs">
+                    <Eye className="h-4 w-4" />
+                    <span>Click to open full view</span>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -292,17 +350,46 @@ export function AssetDetailsModal() {
             <span>Delete Item</span>
           </Button>
 
-          <Button
-            type="button"
-            variant="outline"
-            size="default"
-            onClick={() => setIsDetailsModalOpen(false)}
-            className="w-full sm:w-auto h-11 sm:h-10 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 hover:bg-slate-50 cursor-pointer"
-          >
-            Close
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              type="button"
+              variant="default"
+              size="default"
+              onClick={() => {
+                setIsDetailsModalOpen(false);
+                setAssetToEdit(asset);
+                setIsEditModalOpen(true);
+              }}
+              className="flex-1 sm:flex-initial h-11 sm:h-10 text-xs sm:text-sm font-semibold bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Pencil className="h-4 w-4" />
+              <span>Edit Item</span>
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              onClick={() => setIsDetailsModalOpen(false)}
+              className="w-auto h-11 sm:h-10 text-xs sm:text-sm font-semibold rounded-xl border-slate-200 hover:bg-slate-50 cursor-pointer"
+            >
+              Close
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Embedded Document / Receipt Viewer */}
+      {asset.documentUrl && (
+        <DocumentViewerModal
+          open={isDocViewerOpen}
+          onOpenChange={setIsDocViewerOpen}
+          documentUrl={asset.documentUrl}
+          documentName={asset.documentName || 'Official Receipt'}
+          title={asset.title}
+          subtitle={`${asset.providerOrBrand} • Attached Document`}
+        />
+      )}
     </Dialog>
   );
 }

@@ -239,6 +239,26 @@ export class AssetRepository {
    * Create a new asset with optional milestones and policy details in an atomic transaction
    */
   static async create(dto: ICreateAssetDto, userId: string): Promise<IUniversalAsset> {
+    // Idempotency guard: prevent duplicate entry within 10 seconds from double-submitting
+    const tenSecondsAgo = new Date(Date.now() - 10 * 1000);
+    const recentDuplicate = await prisma.asset.findFirst({
+      where: {
+        userId,
+        title: dto.title,
+        providerOrBrand: dto.providerOrBrand,
+        category: dto.category,
+        createdAt: { gte: tenSecondsAgo },
+      },
+      include: {
+        serviceMilestones: { orderBy: { dueDate: 'asc' } },
+        policyDetails: true,
+      },
+    });
+
+    if (recentDuplicate) {
+      return mapPrismaToUniversalAsset(recentDuplicate);
+    }
+
     const expiryDate = new Date(dto.expiryOrRenewalDate);
     const calculatedStatus = computeExpiryStatus(expiryDate);
 
@@ -348,6 +368,37 @@ export class AssetRepository {
         policyDetails: true,
       },
     });
+
+    if (dto.serviceMilestones !== undefined) {
+      await prisma.serviceMilestone.deleteMany({
+        where: { assetId: id },
+      });
+      if (dto.serviceMilestones.length > 0) {
+        await prisma.serviceMilestone.createMany({
+          data: dto.serviceMilestones.map((m) => ({
+            assetId: id,
+            title: m.title,
+            dueDate: new Date(m.dueDate),
+            isFree: m.isFree,
+            status: m.status || 'pending',
+            cost:
+              m.cost !== undefined && m.cost !== null ? Math.max(0, m.cost) : null,
+            notes: m.notes || null,
+          })),
+        });
+      }
+
+      const refreshed = await prisma.asset.findUnique({
+        where: { id },
+        include: {
+          serviceMilestones: { orderBy: { dueDate: 'asc' } },
+          policyDetails: true,
+        },
+      });
+      if (refreshed) {
+        return mapPrismaToUniversalAsset(refreshed);
+      }
+    }
 
     return mapPrismaToUniversalAsset(updated);
   }

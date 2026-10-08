@@ -33,3 +33,16 @@ export interface IWelcomeEmailData {
   userEmail: string;
   appUrl?: string;
 }
+
+export interface IEmiReminderEmailData {
+  recipientName: string;
+  recipientEmail: string;
+  emiTitle: string;
+  lenderName: string;
+  loanType: string;
+  emiAmount: number;
+  dueDate: string;
+  daysRemaining: number;
+  accountNumber?: string;
+  actionUrl: string;
+}
