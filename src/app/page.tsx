@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ShieldCheck, CreditCard } from 'lucide-react';
 import { HeroSection } from '@/components/dashboard/HeroSection';
 import { MetricCards } from '@/components/dashboard/MetricCards';
@@ -56,42 +56,62 @@ export function VaultDashboardPage() {
       {/* Hero Section */}
       <HeroSection />
 
-      {/* Main View Switcher: Warranties & Bills vs EMI Loans */}
-      <div className="flex items-center justify-center p-1.5 bg-slate-200/70 rounded-2xl sm:rounded-3xl max-w-md mx-auto border border-slate-300/80 shadow-2xs">
-        <button
+      {/* Main View Switcher: Warranties & Bills vs EMI Loans with Animated Sliding Indicator */}
+      <div className="relative flex items-center justify-center p-1.5 bg-slate-200/70 rounded-2xl sm:rounded-3xl max-w-md mx-auto border border-slate-300/80 shadow-2xs">
+        <motion.button
           type="button"
+          whileTap={{ scale: 0.97 }}
           onClick={() => handleSelectView('vault')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-colors cursor-pointer select-none touch-press ${
             activeView === 'vault'
-              ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200'
+              ? 'text-slate-900'
               : 'text-slate-600 hover:text-slate-900'
           }`}
         >
-          <ShieldCheck className="h-4 w-4 text-cyan-600" />
-          <span>Warranties & Bills</span>
-          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-            {totalFilteredCount}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => handleSelectView('emi')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-            activeView === 'emi'
-              ? 'bg-white text-slate-900 shadow-xs ring-1 ring-slate-200'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <CreditCard className="h-4 w-4 text-teal-600" />
-          <span>EMI Loans</span>
-          <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-            {emis.length}
-          </span>
-          {emiMetrics.urgentDueCount > 0 && (
-            <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+          {activeView === 'vault' && (
+            <motion.div
+              layoutId="main-view-switcher-pill"
+              className="absolute inset-0 bg-white rounded-xl sm:rounded-2xl shadow-xs ring-1 ring-slate-200"
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            />
           )}
-        </button>
+          <span className="relative z-10 flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4 text-cyan-600 shrink-0" />
+            <span>Warranties & Bills</span>
+            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+              {totalFilteredCount}
+            </span>
+          </span>
+        </motion.button>
+
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.97 }}
+          onClick={() => handleSelectView('emi')}
+          className={`relative z-10 flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 px-3 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold transition-colors cursor-pointer select-none touch-press ${
+            activeView === 'emi'
+              ? 'text-slate-900'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          {activeView === 'emi' && (
+            <motion.div
+              layoutId="main-view-switcher-pill"
+              className="absolute inset-0 bg-white rounded-xl sm:rounded-2xl shadow-xs ring-1 ring-slate-200"
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-teal-600 shrink-0" />
+            <span>EMI Loans</span>
+            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+              {emis.length}
+            </span>
+            {emiMetrics.urgentDueCount > 0 && (
+              <span className="h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
+            )}
+          </span>
+        </motion.button>
       </div>
 
       {activeView === 'vault' ? (

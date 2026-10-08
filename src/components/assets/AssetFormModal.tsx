@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { DatePicker } from '@/components/ui/date-picker';
 import { useAssetStore } from '@/stores/useAssetStore';
 import { useAssetFormModal } from '@/hooks/useAssetFormModal';
 import { AssetCategory, IUniversalAsset } from '@/types/asset.types';
@@ -216,19 +217,25 @@ function AssetFormBody({ assetToEdit, onClose }: AssetFormBodyProps) {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label className="text-[11px] font-bold text-slate-600">
-                Purchase / Start Date
+                Purchase / Start Date *
               </Label>
-              <Input
-                type="date"
-                value={currentStartDate || ''}
-                onChange={(e) =>
-                  updateStartDateOrMonths(
-                    e.target.value,
-                    Number(currentValidityMonths) || 12
-                  )
-                }
+              <DatePicker
+                value={currentStartDate}
+                onChange={(val) => {
+                  if (val) {
+                    updateStartDateOrMonths(
+                      val,
+                      Number(currentValidityMonths) || 12
+                    );
+                  }
+                }}
                 className="h-9 text-xs bg-white"
               />
+              {errors.startDate && (
+                <p className="text-[10px] text-destructive font-medium">
+                  {errors.startDate.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -247,24 +254,30 @@ function AssetFormBody({ assetToEdit, onClose }: AssetFormBodyProps) {
                     Math.max(1, parseInt(e.target.value, 10) || 1)
                   )
                 }
-                className="h-9 text-xs bg-white"
+                className="h-9 text-xs bg-white font-semibold"
               />
             </div>
 
             <div className="space-y-1">
               <Label className="text-[11px] font-bold text-slate-600">
-                Expiry / Renewal Date
+                Expiry / Renewal Date *
               </Label>
-              <Input
-                type="date"
-                value={currentExpiryDate || ''}
-                onChange={(e) =>
-                  setValue('expiryOrRenewalDate', e.target.value, {
-                    shouldValidate: true,
-                  })
-                }
+              <DatePicker
+                value={currentExpiryDate}
+                onChange={(val) => {
+                  if (val) {
+                    setValue('expiryOrRenewalDate', val, {
+                      shouldValidate: true,
+                    });
+                  }
+                }}
                 className="h-9 text-xs bg-white"
               />
+              {errors.expiryOrRenewalDate && (
+                <p className="text-[10px] text-destructive font-medium">
+                  {errors.expiryOrRenewalDate.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -339,13 +352,12 @@ function AssetFormBody({ assetToEdit, onClose }: AssetFormBodyProps) {
 
                   {/* Due Date picker */}
                   <div className="w-full sm:w-44 shrink-0">
-                    <Input
-                      type="date"
+                    <DatePicker
                       value={m.dueDate}
-                      onChange={(e) =>
-                        handleUpdateMilestone(idx, 'dueDate', e.target.value)
+                      onChange={(val) =>
+                        handleUpdateMilestone(idx, 'dueDate', val || '')
                       }
-                      className="h-8 text-xs bg-slate-50/50 font-medium"
+                      className="h-8 text-xs bg-white font-medium"
                     />
                   </div>
 

@@ -77,7 +77,7 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto max-w-[calc(100vw-1.5rem)] p-0 rounded-2xl border border-slate-200 bg-white shadow-xl"
+        className="w-auto max-w-[calc(100vw-1.5rem)] p-0 rounded-2xl border border-slate-200 bg-white shadow-xl z-[70]"
         align="start"
       >
         <Calendar

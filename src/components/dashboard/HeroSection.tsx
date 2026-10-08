@@ -13,7 +13,6 @@ import {
   CalendarClock,
   BadgePercent,
   CheckCircle2,
-  CalendarDays,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,28 +79,7 @@ export function HeroSection() {
                 </p>
               </div>
 
-              {/* Mobile View: Quick Action Guide Prompt (sm:hidden) */}
-              <div className="sm:hidden flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-white/90 border border-teal-200/80 shadow-2xs backdrop-blur-xs">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-teal-600 to-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                    <CalendarDays className="h-4.5 w-4.5 text-teal-100" />
-                  </div>
-                  <div className="text-xs min-w-0">
-                    <p className="font-bold text-slate-800 truncate">Add New EMI Loan</p>
-                    <p className="text-[11px] text-slate-500 leading-snug">
-                      Tap below to add & monitor your monthly dues.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={handleOpenAddEmiModal}
-                  className="h-8 px-3 rounded-xl bg-teal-600 text-white font-bold text-xs shrink-0 touch-press"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  <span>Add</span>
-                </Button>
-              </div>
+
 
               {/* Desktop / Tablet Action Buttons Suite (hidden sm:flex) */}
               <div className="hidden sm:flex flex-row items-center gap-3 pt-1">
@@ -191,18 +169,7 @@ export function HeroSection() {
                 </p>
               </div>
 
-              {/* Mobile View: Quick Action Guide Prompt (sm:hidden) */}
-              <div className="sm:hidden flex items-center gap-3 p-3.5 rounded-2xl bg-white/85 border border-cyan-200/80 shadow-2xs backdrop-blur-xs">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Sparkles className="h-4.5 w-4.5 text-cyan-100" />
-                </div>
-                <div className="text-xs">
-                  <p className="font-bold text-slate-800">Quick Actions Ready</p>
-                  <p className="text-[11px] text-slate-500 leading-snug">
-                    Use the scan or add button at the bottom navigation anytime.
-                  </p>
-                </div>
-              </div>
+
 
               {/* Desktop / Tablet Action Buttons Suite (hidden sm:flex) */}
               <div className="hidden sm:flex flex-row items-center gap-3 pt-1">

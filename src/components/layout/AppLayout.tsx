@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ScanLine,
   Bell,
@@ -11,6 +12,7 @@ import {
   LogOut,
   Plus,
   CreditCard,
+  ArrowLeftRight,
 } from "lucide-react";
 import { AppLogo } from "@/components/ui/AppLogo";
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,6 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const currentCategory = useAssetStore((state) => state.filter.category);
   const setFilterCategory = useAssetStore((state) => state.setFilterCategory);
   const { handleOpenAddModal, handleOpenScanModal, handleOpenAddEmiModal } =
     useProtectedAction();
@@ -89,11 +90,11 @@ export function AppLayout({ children }: AppLayoutProps) {
 
             {/* Right Action Suite: Visible on both mobile and desktop */}
             <div className="flex items-center gap-1.5 sm:gap-3">
-              {/* Notification Bell with Badge (Mobile & Desktop) */}
+              {/* Notification Bell with Badge (Desktop only; on mobile, accessed via bottom navigation bar) */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative h-10 w-10 rounded-2xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
+                className="hidden md:inline-flex relative h-10 w-10 rounded-2xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
                 onClick={() => setIsNotificationPanelOpen(true)}
                 aria-label="Alerts"
               >
@@ -184,85 +185,148 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Native Mobile Bottom Navigation Bar (Centered & Fixed Position) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200/90 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1">
         <div className="grid grid-cols-5 items-center justify-items-center w-full max-w-md mx-auto px-1 h-14">
-          {/* 1. Items Tab */}
-          <button
+          {/* 1. Unified Dynamic View Switcher Tab (Items ⇄ EMIs) */}
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.92 }}
             onClick={() => {
-              setActiveTab("vault");
-              setFilterCategory("all");
+              if (activeTab === "emi") {
+                setActiveTab("vault");
+                setFilterCategory("all");
+              } else {
+                setActiveTab("emi");
+              }
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className={`flex flex-col items-center justify-center w-full h-full py-1 rounded-xl transition-all cursor-pointer ${
-              activeTab === "vault" && currentCategory === "all"
-                ? "text-cyan-700 font-bold"
-                : "text-slate-500 hover:text-slate-800 font-medium"
-            }`}
-          >
-            <LayoutGrid className="h-5 w-5 mb-0.5 shrink-0" />
-            <span className="text-[10px] leading-tight">Items</span>
-          </button>
-
-          {/* 2. EMI Loans Tab */}
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("emi");
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className={`flex flex-col items-center justify-center w-full h-full py-1 rounded-xl transition-all cursor-pointer ${
+            className={`relative flex flex-col items-center justify-center w-full h-full py-1 rounded-2xl transition-all cursor-pointer touch-press select-none group ${
               activeTab === "emi"
-                ? "text-teal-700 font-bold"
-                : "text-slate-500 hover:text-slate-800 font-medium"
+                ? "text-teal-700 font-extrabold"
+                : "text-cyan-700 font-extrabold"
             }`}
+            aria-label={
+              activeTab === "emi"
+                ? "Viewing EMIs. Tap to switch to Items"
+                : "Viewing Items. Tap to switch to EMIs"
+            }
           >
-            <CreditCard className="h-5 w-5 mb-0.5 shrink-0" />
-            <span className="text-[10px] leading-tight">EMIs</span>
-          </button>
+            {/* Soft animated background highlight */}
+            <motion.div
+              layoutId="mobile-nav-active-pill"
+              className={`absolute inset-x-1.5 inset-y-1 rounded-xl pointer-events-none transition-colors ${
+                activeTab === "emi" ? "bg-teal-50/90" : "bg-cyan-50/90"
+              }`}
+              transition={{ type: "spring", stiffness: 450, damping: 30 }}
+            />
 
-          {/* 3. Central Dynamic Action Button (Centered & Elevated) */}
+            {/* Animated Icon morph */}
+            <div className="relative z-10 flex items-center justify-center">
+              <AnimatePresence mode="wait" initial={false}>
+                {activeTab === "emi" ? (
+                  <motion.div
+                    key="emi-icon"
+                    initial={{ scale: 0.5, rotate: -25, opacity: 0 }}
+                    animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                    exit={{ scale: 0.5, rotate: 25, opacity: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="relative flex items-center justify-center"
+                  >
+                    <CreditCard className="h-5 w-5 mb-0.5 shrink-0 text-teal-600 stroke-[2.2]" />
+                    <span className="absolute -top-1 -right-1.5 flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500" />
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="vault-icon"
+                    initial={{ scale: 0.5, rotate: 25, opacity: 0 }}
+                    animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                    exit={{ scale: 0.5, rotate: -25, opacity: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
+                    className="relative flex items-center justify-center"
+                  >
+                    <LayoutGrid className="h-5 w-5 mb-0.5 shrink-0 text-cyan-600 stroke-[2.2]" />
+                    <span className="absolute -top-1 -right-1.5 flex h-2 w-2">
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-cyan-500" />
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Label with micro-switch hint */}
+            <div className="relative z-10 flex items-center gap-0.5 text-[10px] leading-tight">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={activeTab === "emi" ? "emis" : "items"}
+                  initial={{ y: 3, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -3, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="font-extrabold tracking-tight"
+                >
+                  {activeTab === "emi" ? "EMIs" : "Items"}
+                </motion.span>
+              </AnimatePresence>
+              <ArrowLeftRight className="h-2.5 w-2.5 opacity-60 text-slate-400 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </motion.button>
+
+          {/* 2. Alerts & Reminders Tab (Core Project Feature) */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setIsNotificationPanelOpen(true)}
+            className="relative flex flex-col items-center justify-center w-full h-full py-1 text-slate-500 hover:text-cyan-700 transition-colors cursor-pointer select-none group touch-press"
+            aria-label="Alerts & Reminders"
+          >
+            <div className="relative flex items-center justify-center">
+              <Bell className="h-5 w-5 mb-0.5 shrink-0 text-slate-600 group-hover:text-cyan-700 group-hover:scale-105 transition-transform" />
+              {unreadCount > 0 && (
+                <span
+                  suppressHydrationWarning
+                  className="absolute -top-1 -right-2 h-3.5 min-w-[0.875rem] px-1 rounded-full bg-rose-500 text-[9px] font-extrabold flex items-center justify-center text-white ring-2 ring-white shadow-2xs animate-pulse"
+                >
+                  {unreadCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] leading-tight font-medium group-hover:font-bold">
+              Alerts
+            </span>
+          </motion.button>
+
+          {/* 3. Central Scan Bill Button (Centered & Elevated at 50% exact alignment) */}
           <div className="relative flex flex-col items-center justify-center w-full h-full">
             <button
               type="button"
-              onClick={
-                activeTab === "emi"
-                  ? handleOpenAddEmiModal
-                  : handleOpenScanModal
-              }
+              onClick={handleOpenScanModal}
               className="absolute -top-5 flex flex-col items-center group focus:outline-none cursor-pointer touch-press"
-              aria-label={activeTab === "emi" ? "Add EMI Loan" : "Scan bill"}
+              aria-label="Scan bill"
             >
-              <div
-                className={`h-12 w-12 rounded-2xl shadow-lg group-active:scale-95 transition-transform flex items-center justify-center border-2 border-white ${
-                  activeTab === "emi"
-                    ? "bg-gradient-to-tr from-teal-600 via-emerald-600 to-teal-700 shadow-teal-600/35 ring-2 ring-teal-100"
-                    : "bg-gradient-to-tr from-cyan-600 via-teal-600 to-cyan-700 shadow-cyan-600/35 ring-2 ring-cyan-100"
-                }`}
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.94 }}
+                className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-cyan-600 via-teal-600 to-cyan-700 shadow-lg shadow-cyan-600/35 flex items-center justify-center border-2 border-white ring-2 ring-cyan-100 group-hover:ring-cyan-200 transition-all"
               >
-                {activeTab === "emi" ? (
-                  <Plus className="h-6 w-6 text-white stroke-[2.5]" />
-                ) : (
-                  <ScanLine className="h-6 w-6 text-white" />
-                )}
-              </div>
-              <span
-                className={`text-[10px] font-bold mt-1 leading-tight ${
-                  activeTab === "emi" ? "text-teal-700" : "text-cyan-700"
-                }`}
-              >
-                {activeTab === "emi" ? "Add EMI" : "Scan AI"}
+                <ScanLine className="h-6 w-6 text-white" />
+              </motion.div>
+              <span className="text-[10px] font-bold text-cyan-700 mt-1 leading-tight">
+                Scan AI
               </span>
             </button>
           </div>
 
           {/* 4. Manual Add Item / Add EMI Button */}
-          <button
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.92 }}
             onClick={
               activeTab === "emi"
                 ? handleOpenAddEmiModal
                 : handleOpenAddModal
             }
-            className={`flex flex-col items-center justify-center w-full h-full py-1 transition-all cursor-pointer font-medium rounded-xl touch-press ${
+            className={`flex flex-col items-center justify-center w-full h-full py-1 transition-all cursor-pointer font-medium rounded-xl touch-press select-none ${
               activeTab === "emi"
                 ? "text-teal-700 hover:text-teal-800"
                 : "text-slate-500 hover:text-slate-800"
@@ -272,25 +336,35 @@ export function AppLayout({ children }: AppLayoutProps) {
               className={`h-5 w-5 mb-0.5 shrink-0 ${
                 activeTab === "emi"
                   ? "text-teal-600 stroke-[2.5]"
-                  : "text-slate-600"
+                  : "text-slate-600 stroke-[2]"
               }`}
             />
-            <span className="text-[10px] leading-tight">
-              {activeTab === "emi" ? "Add EMI" : "Add Item"}
-            </span>
-          </button>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span
+                key={activeTab === "emi" ? "add-emi" : "add-item"}
+                initial={{ y: 3, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -3, opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="text-[10px] leading-tight font-medium"
+              >
+                {activeTab === "emi" ? "Add EMI" : "Add Item"}
+              </motion.span>
+            </AnimatePresence>
+          </motion.button>
 
           {/* 5. Profile / Account Tab */}
-          <button
+          <motion.button
             type="button"
+            whileTap={{ scale: 0.92 }}
             onClick={isAuthenticated ? openProfileModal : openLoginModal}
-            className="flex flex-col items-center justify-center w-full h-full py-1 text-slate-500 hover:text-slate-800 transition-all cursor-pointer font-medium rounded-xl"
+            className="flex flex-col items-center justify-center w-full h-full py-1 text-slate-500 hover:text-slate-800 transition-all cursor-pointer font-medium rounded-xl select-none"
           >
-            <User className="h-5 w-5 mb-0.5 shrink-0" />
+            <User className="h-5 w-5 mb-0.5 shrink-0 text-slate-600" />
             <span className="text-[10px] leading-tight">
               {isAuthenticated ? "Account" : "Sign In"}
             </span>
-          </button>
+          </motion.button>
         </div>
       </nav>
     </div>
