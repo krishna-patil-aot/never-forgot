@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/popover';
 import { useDatePicker } from '@/hooks/useDatePicker';
 import { IDatePickerProps } from '@/types/datePicker.types';
+import { parseToStartOfDay, parseToEndOfDay } from '@/lib/dateUtils';
 
 export type { IDatePickerProps as DatePickerProps };
 
@@ -34,7 +35,17 @@ export function DatePicker({
     handleSelect,
     handleClear,
     handleToday,
-  } = useDatePicker({ value, onChange });
+    isTodayDisabled,
+  } = useDatePicker({ value, onChange, minDate, maxDate });
+
+  const normalizedMinDate = React.useMemo(
+    () => parseToStartOfDay(minDate),
+    [minDate]
+  );
+  const normalizedMaxDate = React.useMemo(
+    () => parseToEndOfDay(maxDate),
+    [maxDate]
+  );
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -84,11 +95,33 @@ export function DatePicker({
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
-          minDate={minDate}
-          maxDate={maxDate}
+          minDate={normalizedMinDate}
+          maxDate={normalizedMaxDate}
           disabled={(date) => {
-            if (minDate && date < minDate) return true;
-            if (maxDate && date > maxDate) return true;
+            if (normalizedMinDate) {
+              const dayStart = new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+                0,
+                0,
+                0,
+                0
+              );
+              if (dayStart < normalizedMinDate) return true;
+            }
+            if (normalizedMaxDate) {
+              const dayEnd = new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+                23,
+                59,
+                59,
+                999
+              );
+              if (dayEnd > normalizedMaxDate) return true;
+            }
             return false;
           }}
         />
@@ -98,7 +131,13 @@ export function DatePicker({
             variant="ghost"
             size="sm"
             onClick={handleToday}
-            className="text-xs h-7 px-2.5 text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50 font-medium cursor-pointer"
+            disabled={isTodayDisabled}
+            className={cn(
+              'text-xs h-7 px-2.5 font-medium cursor-pointer',
+              isTodayDisabled
+                ? 'text-slate-300 cursor-not-allowed hover:bg-transparent'
+                : 'text-cyan-600 hover:text-cyan-700 hover:bg-cyan-50'
+            )}
           >
             Today
           </Button>

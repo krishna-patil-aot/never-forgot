@@ -264,6 +264,7 @@ function AssetFormBody({ assetToEdit, onClose }: AssetFormBodyProps) {
               </Label>
               <DatePicker
                 value={currentExpiryDate}
+                minDate={currentStartDate}
                 onChange={(val) => {
                   if (val) {
                     setValue('expiryOrRenewalDate', val, {
@@ -354,6 +355,7 @@ function AssetFormBody({ assetToEdit, onClose }: AssetFormBodyProps) {
                   <div className="w-full sm:w-44 shrink-0">
                     <DatePicker
                       value={m.dueDate}
+                      minDate={currentStartDate}
                       onChange={(val) =>
                         handleUpdateMilestone(idx, 'dueDate', val || '')
                       }

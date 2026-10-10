@@ -43,8 +43,8 @@ const MONTH_FULL_NAMES = [
 const QUICK_DECADES = [1980, 1990, 2000, 2010, 2020, 2030];
 
 export type CalendarProps = DayPickerProps & {
-  minDate?: Date;
-  maxDate?: Date;
+  minDate?: Date | string | null;
+  maxDate?: Date | string | null;
   initialViewMode?: CalendarViewMode;
 };
 

@@ -38,35 +38,72 @@ export class NotificationService {
 
     const existingNotifications = await prisma.notification.findMany({
       where: { userId },
-      select: { assetId: true, emiId: true, type: true, link: true, title: true },
+      select: {
+        id: true,
+        assetId: true,
+        emiId: true,
+        type: true,
+        link: true,
+        title: true,
+        createdAt: true,
+      },
     });
 
     // Track which milestones have already been dispatched to prevent duplicate spam
     const existingMap = new Set<string>();
     for (const notif of existingNotifications) {
+      const notifMonth = moment(notif.createdAt).format('YYYY-MM');
+      const linkMonthMatch = notif.link?.match(/month=([0-9]{4}-[0-9]{2})/);
+      const linkMonth = linkMonthMatch ? linkMonthMatch[1] : notifMonth;
+
       if (notif.assetId) {
-        if (notif.link?.includes('milestone=7d') || notif.title.includes('7-Day Reminder')) {
+        existingMap.add(`${notif.assetId}_${notif.type}`);
+        if (
+          notif.link?.includes('milestone=7d') ||
+          notif.title.includes('7-Day Reminder') ||
+          notif.type === 'expiry_warning_7d'
+        ) {
           existingMap.add(`${notif.assetId}_warranty_expiry_7d`);
         }
         if (
           notif.link?.includes('milestone=1d') ||
           notif.title.includes('Final Notice') ||
-          notif.title.includes('1-Day')
+          notif.title.includes('1-Day') ||
+          notif.type === 'expiry_warning_1d'
         ) {
           existingMap.add(`${notif.assetId}_warranty_expiry_1d`);
         }
-        if (notif.link?.includes('milestone=expired') || notif.title.includes('Coverage Expired')) {
+        if (
+          notif.link?.includes('milestone=expired') ||
+          notif.title.includes('Coverage Expired')
+        ) {
           existingMap.add(`${notif.assetId}_warranty_expiry_expired`);
         }
-        existingMap.add(`${notif.assetId}_${notif.type}`);
       }
+
       if (notif.emiId) {
         existingMap.add(`${notif.emiId}_${notif.type}`);
-        if (notif.link?.includes('milestone=7d')) {
+        existingMap.add(`${notif.emiId}_${notif.type}_${notifMonth}`);
+        existingMap.add(`${notif.emiId}_${notif.type}_${linkMonth}`);
+
+        if (
+          notif.link?.includes('milestone=7d') ||
+          notif.title.includes('7-Day') ||
+          notif.type === 'emi_reminder_7d'
+        ) {
           existingMap.add(`${notif.emiId}_emi_7d`);
+          existingMap.add(`${notif.emiId}_emi_7d_${notifMonth}`);
+          existingMap.add(`${notif.emiId}_emi_7d_${linkMonth}`);
         }
-        if (notif.link?.includes('milestone=1d')) {
+        if (
+          notif.link?.includes('milestone=1d') ||
+          notif.title.includes('1-Day') ||
+          notif.title.includes('Urgent') ||
+          notif.type === 'emi_reminder_1d'
+        ) {
           existingMap.add(`${notif.emiId}_emi_1d`);
+          existingMap.add(`${notif.emiId}_emi_1d_${notifMonth}`);
+          existingMap.add(`${notif.emiId}_emi_1d_${linkMonth}`);
         }
       }
     }
@@ -254,8 +291,20 @@ export class NotificationService {
 
       // 1. 7-Day Reminder
       if (emiDiff <= 7 && emiDiff > 1) {
-        const key7d = `${emi.id}_emi_7d_${targetDueDate.format('YYYY-MM')}`;
-        if (!existingMap.has(key7d)) {
+        const targetMonth = targetDueDate.format('YYYY-MM');
+        const key7d = `${emi.id}_emi_7d_${targetMonth}`;
+        const alreadyDispatched =
+          existingMap.has(key7d) ||
+          existingMap.has(`${emi.id}_emi_7d`) ||
+          existingMap.has(`${emi.id}_emi_reminder_7d_${targetMonth}`) ||
+          existingNotifications.some(
+            (n) =>
+              n.emiId === emi.id &&
+              (n.type === 'emi_reminder_7d' || n.link?.includes('milestone=7d')) &&
+              moment(n.createdAt).format('YYYY-MM') === targetMonth
+          );
+
+        if (!alreadyDispatched) {
           await prisma.notification.create({
             data: {
               userId,
@@ -264,10 +313,12 @@ export class NotificationService {
               message: `Monthly EMI of ₹${emi.emiAmount.toLocaleString('en-IN')} for ${emi.title} (${emi.lenderName}) is due in ${emiDiff} days on ${formattedEmiDate}. Ensure sufficient balance for payment.`,
               category: 'emi',
               type: 'emi_reminder_7d',
-              link: `/#emi-${emi.id}?milestone=7d`,
+              link: `/#emi-${emi.id}?milestone=7d&month=${targetMonth}`,
             },
           });
           existingMap.add(key7d);
+          existingMap.add(`${emi.id}_emi_7d`);
+          existingMap.add(`${emi.id}_emi_reminder_7d_${targetMonth}`);
           generatedCount++;
 
           if (user?.email && user.notificationEmailEnabled) {
@@ -291,8 +342,20 @@ export class NotificationService {
 
       // 2. 1-Day Urgent Notice
       if (emiDiff <= 1 && emiDiff >= 0) {
-        const key1d = `${emi.id}_emi_1d_${targetDueDate.format('YYYY-MM')}`;
-        if (!existingMap.has(key1d)) {
+        const targetMonth = targetDueDate.format('YYYY-MM');
+        const key1d = `${emi.id}_emi_1d_${targetMonth}`;
+        const alreadyDispatched =
+          existingMap.has(key1d) ||
+          existingMap.has(`${emi.id}_emi_1d`) ||
+          existingMap.has(`${emi.id}_emi_reminder_1d_${targetMonth}`) ||
+          existingNotifications.some(
+            (n) =>
+              n.emiId === emi.id &&
+              (n.type === 'emi_reminder_1d' || n.link?.includes('milestone=1d')) &&
+              moment(n.createdAt).format('YYYY-MM') === targetMonth
+          );
+
+        if (!alreadyDispatched) {
           const dayLabel = emiDiff === 0 ? 'today' : 'tomorrow';
           await prisma.notification.create({
             data: {
@@ -302,10 +365,12 @@ export class NotificationService {
               message: `Urgent: EMI installment of ₹${emi.emiAmount.toLocaleString('en-IN')} for ${emi.title} (${emi.lenderName}) is due ${dayLabel} (${formattedEmiDate}). Please keep funds ready to avoid penalties.`,
               category: 'emi',
               type: 'emi_reminder_1d',
-              link: `/#emi-${emi.id}?milestone=1d`,
+              link: `/#emi-${emi.id}?milestone=1d&month=${targetMonth}`,
             },
           });
           existingMap.add(key1d);
+          existingMap.add(`${emi.id}_emi_1d`);
+          existingMap.add(`${emi.id}_emi_reminder_1d_${targetMonth}`);
           generatedCount++;
 
           if (user?.email && user.notificationEmailEnabled) {

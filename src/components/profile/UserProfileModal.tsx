@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { useProfileForm } from '@/hooks/useProfileForm';
+import { formatGlobalPhoneDisplay } from '@/lib/phoneValidation';
 import { useAssetStore } from '@/stores/useAssetStore';
 import {
   User,
@@ -45,6 +46,7 @@ export function UserProfileModal() {
     successMessage,
     register,
     handleSubmit,
+    errors,
     handleLogout,
     closeProfileModal,
   } = useProfileForm();
@@ -188,7 +190,7 @@ export function UserProfileModal() {
                   <div>
                     <p className="text-[11px] font-medium text-slate-500">Phone Number</p>
                     <p className="font-bold text-slate-800 mt-0.5">
-                      {user.phone || 'Not added yet'}
+                      {user.phone ? formatGlobalPhoneDisplay(user.phone) : 'Not added yet'}
                     </p>
                   </div>
                   <div>
@@ -307,22 +309,45 @@ export function UserProfileModal() {
                     required
                     type="text"
                     {...register('fullName')}
-                    className="pl-9 h-10 rounded-xl text-xs sm:text-sm w-full min-w-0"
+                    className={`pl-9 h-10 rounded-xl text-xs sm:text-sm w-full min-w-0 transition-colors ${
+                      errors.fullName ? 'border-rose-400 focus-visible:ring-rose-400' : ''
+                    }`}
                   />
                 </div>
+                {errors.fullName?.message && (
+                  <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    <span>{errors.fullName.message}</span>
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1 min-w-0">
-                <Label className="text-xs font-semibold text-slate-700">Phone Number</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold text-slate-700">Phone Number</Label>
+                  <span className="text-[10px] text-slate-400 font-medium">Global (E.164) format</span>
+                </div>
                 <div className="relative min-w-0">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-400 shrink-0" />
                   <Input
                     type="tel"
                     placeholder="+91 98765 43210"
                     {...register('phone')}
-                    className="pl-9 h-10 rounded-xl text-xs sm:text-sm w-full min-w-0"
+                    className={`pl-9 h-10 rounded-xl text-xs sm:text-sm w-full min-w-0 transition-colors ${
+                      errors.phone ? 'border-rose-400 focus-visible:ring-rose-400' : ''
+                    }`}
                   />
                 </div>
+                {errors.phone?.message ? (
+                  <p className="text-[11px] font-medium text-rose-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    <span>{errors.phone.message}</span>
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-slate-400">
+                    Include country code with &apos;+&apos; prefix (e.g. +91 98765 43210 or +1 555 123 4567)
+                  </p>
+                )}
               </div>
 
               {/* Notification Preference Toggles */}

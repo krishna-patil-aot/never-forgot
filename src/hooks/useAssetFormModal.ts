@@ -20,31 +20,43 @@ import {
 } from '@/types/api.types';
 import { compressDocument } from '@/lib/compression';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { isDateAfterOrEqual } from '@/lib/dateUtils';
 
-export const assetFormSchema = z.object({
-  title: z.string().min(2, 'Title must be at least 2 characters'),
-  providerOrBrand: z.string().min(1, 'Brand or Provider is required'),
-  category: z.enum([
-    'electronics',
-    'vehicle',
-    'health_insurance',
-    'life_insurance',
-    'home_amc',
-    'personal_doc',
-  ]),
-  identifierNumber: z.string().optional(),
-  startDate: z.string().min(4, 'Valid start date required'),
-  validityMonths: z.number().min(1, 'Validity must be at least 1 month'),
-  expiryOrRenewalDate: z.string().min(4, 'Expiry date required'),
-  price: z.number().min(0, 'Purchase cost cannot be negative').optional(),
-  notes: z.string().optional(),
+export const assetFormSchema = z
+  .object({
+    title: z.string().min(2, 'Title must be at least 2 characters'),
+    providerOrBrand: z.string().min(1, 'Brand or Provider is required'),
+    category: z.enum([
+      'electronics',
+      'vehicle',
+      'health_insurance',
+      'life_insurance',
+      'home_amc',
+      'personal_doc',
+    ]),
+    identifierNumber: z.string().optional(),
+    startDate: z.string().min(4, 'Valid start date required'),
+    validityMonths: z.number().min(1, 'Validity must be at least 1 month'),
+    expiryOrRenewalDate: z.string().min(4, 'Expiry date required'),
+    price: z.number().min(0, 'Purchase cost cannot be negative').optional(),
+    notes: z.string().optional(),
 
-  // Policy specific
-  policyNumber: z.string().optional(),
-  sumInsured: z.number().min(0, 'Coverage sum cannot be negative').optional(),
-  premiumAmount: z.number().min(0, 'Premium amount cannot be negative').optional(),
-  tpaHelpline: z.string().optional(),
-});
+    // Policy specific
+    policyNumber: z.string().optional(),
+    sumInsured: z.number().min(0, 'Coverage sum cannot be negative').optional(),
+    premiumAmount: z.number().min(0, 'Premium amount cannot be negative').optional(),
+    tpaHelpline: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.startDate || !data.expiryOrRenewalDate) return true;
+      return isDateAfterOrEqual(data.expiryOrRenewalDate, data.startDate);
+    },
+    {
+      message: 'Expiry or renewal date must be on or after the purchase date',
+      path: ['expiryOrRenewalDate'],
+    }
+  );
 
 export type AssetFormData = z.infer<typeof assetFormSchema>;
 

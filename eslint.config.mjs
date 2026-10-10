@@ -1,3 +1,6 @@
+if (typeof globalThis.structuredClone === "undefined") {
+  globalThis.structuredClone = (val) => JSON.parse(JSON.stringify(val));
+}
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";

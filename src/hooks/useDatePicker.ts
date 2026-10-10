@@ -6,6 +6,7 @@ import {
   IUseDatePickerProps,
   IUseDatePickerReturn,
 } from '@/types/datePicker.types';
+import { parseToStartOfDay, parseToEndOfDay } from '@/lib/dateUtils';
 
 export type { IUseDatePickerProps, IUseDatePickerReturn };
 
@@ -29,9 +30,28 @@ export function parseLocalDate(val?: string | Date | null): Date | undefined {
   return undefined;
 }
 
-export function useDatePicker({ value, onChange }: IUseDatePickerProps): IUseDatePickerReturn {
+export function useDatePicker({
+  value,
+  onChange,
+  minDate,
+  maxDate,
+}: IUseDatePickerProps): IUseDatePickerReturn {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const selectedDate = useMemo(() => parseLocalDate(value), [value]);
+
+  const minBoundary = useMemo(() => parseToStartOfDay(minDate), [minDate]);
+  const maxBoundary = useMemo(() => parseToEndOfDay(maxDate), [maxDate]);
+
+  const isTodayDisabled = useMemo(() => {
+    const today = moment().startOf('day');
+    if (minBoundary && today.isBefore(moment(minBoundary).startOf('day'))) {
+      return true;
+    }
+    if (maxBoundary && today.isAfter(moment(maxBoundary).endOf('day'))) {
+      return true;
+    }
+    return false;
+  }, [minBoundary, maxBoundary]);
 
   const handleSelect = useCallback(
     (date: Date | undefined) => {
@@ -57,11 +77,12 @@ export function useDatePicker({ value, onChange }: IUseDatePickerProps): IUseDat
   );
 
   const handleToday = useCallback(() => {
+    if (isTodayDisabled) return;
     if (onChange) {
       onChange(moment().format('YYYY-MM-DD'));
     }
     setIsOpen(false);
-  }, [onChange]);
+  }, [onChange, isTodayDisabled]);
 
   return {
     isOpen,
@@ -70,5 +91,6 @@ export function useDatePicker({ value, onChange }: IUseDatePickerProps): IUseDat
     handleSelect,
     handleClear,
     handleToday,
+    isTodayDisabled,
   };
 }

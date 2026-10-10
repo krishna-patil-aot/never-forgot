@@ -228,6 +228,7 @@ export function AddAssetModal() {
               <Label>Calculated End Date *</Label>
               <DatePicker
                 value={formData.expiryOrRenewalDate}
+                minDate={formData.startDate}
                 onChange={(val) => {
                   if (val) {
                     updateField("expiryOrRenewalDate", val);

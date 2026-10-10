@@ -68,4 +68,56 @@ export function formatCurrencyINR(amount: number): string {
   return `₹${formatted}`;
 }
 
+/**
+ * Parse any date input safely into a local Date set to the start of the day (00:00:00.000).
+ */
+export function parseToStartOfDay(
+  dateInput?: string | Date | null
+): Date | undefined {
+  if (!dateInput) return undefined;
+  const m = moment(dateInput);
+  if (!m.isValid()) return undefined;
+  return m.startOf('day').toDate();
+}
+
+/**
+ * Parse any date input safely into a local Date set to the end of the day (23:59:59.999).
+ */
+export function parseToEndOfDay(
+  dateInput?: string | Date | null
+): Date | undefined {
+  if (!dateInput) return undefined;
+  const m = moment(dateInput);
+  if (!m.isValid()) return undefined;
+  return m.endOf('day').toDate();
+}
+
+/**
+ * Checks whether candidateDate is strictly before baseDate (comparing by start of day).
+ */
+export function isDateBefore(
+  candidateDate: string | Date,
+  baseDate: string | Date
+): boolean {
+  if (!candidateDate || !baseDate) return false;
+  const candidate = moment(candidateDate).startOf('day');
+  const base = moment(baseDate).startOf('day');
+  if (!candidate.isValid() || !base.isValid()) return false;
+  return candidate.isBefore(base);
+}
+
+/**
+ * Checks whether candidateDate is on or after baseDate (comparing by start of day).
+ */
+export function isDateAfterOrEqual(
+  candidateDate: string | Date,
+  baseDate: string | Date
+): boolean {
+  if (!candidateDate || !baseDate) return true;
+  const candidate = moment(candidateDate).startOf('day');
+  const base = moment(baseDate).startOf('day');
+  if (!candidate.isValid() || !base.isValid()) return true;
+  return candidate.isSameOrAfter(base);
+}
+
 export { moment };

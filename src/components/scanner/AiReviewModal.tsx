@@ -279,6 +279,7 @@ export function AiReviewModal() {
             </div>
             <DatePicker
               value={extractedData.expiryOrRenewalDate}
+              minDate={extractedData.startDate}
               onChange={(dateStr) =>
                 updateExtractedField('expiryOrRenewalDate', dateStr)
               }

@@ -4,6 +4,7 @@ import { ensureDbInitialized } from '@/server/initDb';
 import { getAuthenticatedUser } from '@/server/auth/session';
 import { IApiResponse, IUpdateAssetDto } from '@/types/api.types';
 import { IUniversalAsset } from '@/types/asset.types';
+import { isDateBefore } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +72,21 @@ export async function PUT(
 
     const { id } = await context.params;
     const body: IUpdateAssetDto = (await request.json()) as IUpdateAssetDto;
+
+    if (
+      body.startDate &&
+      body.expiryOrRenewalDate &&
+      isDateBefore(body.expiryOrRenewalDate, body.startDate)
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: 'Expiry or renewal date cannot be before the purchase date.',
+        },
+        { status: 400 }
+      );
+    }
 
     const updated = await AssetRepository.update(id, body, user.id);
 

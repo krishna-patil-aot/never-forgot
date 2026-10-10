@@ -10,6 +10,7 @@ import {
   LoanType,
   EmiStatus,
 } from '@/types/emi.types';
+import { isDateBefore } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,6 +93,17 @@ export async function POST(
           success: false,
           data: null,
           error: 'Missing required EMI fields (title, lenderName, loanType, emiAmount, dueDay, startDate)',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (body.endDate && isDateBefore(body.endDate, body.startDate)) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: 'Loan completion end date cannot be before loan start date.',
         },
         { status: 400 }
       );

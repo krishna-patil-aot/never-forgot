@@ -26,7 +26,7 @@ import { useConsumerLayout } from '@/hooks/useSidebar';
 import { useEmiApi } from '@/hooks/useEmiApi';
 import { useEmiMetrics } from '@/hooks/useEmiMetrics';
 
-export function VaultDashboardPage() {
+function VaultDashboardPage() {
   useAssetApi();
   useNotificationApi();
   const { emis } = useEmiApi();

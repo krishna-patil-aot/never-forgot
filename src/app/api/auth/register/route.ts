@@ -7,6 +7,7 @@ import {
 } from '@/server/auth/auth.utils';
 import { EmailService } from '@/server/services/email.service';
 import { IRegisterDto, IAuthApiResponse } from '@/types/auth.types';
+import { isValidGlobalPhoneNumber, normalizeGlobalPhoneNumber } from '@/lib/phoneValidation';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,11 +50,27 @@ export async function POST(
     // Hash password if supplied
     const passwordHash = body.password ? hashPassword(body.password) : undefined;
 
+    let sanitizedPhone: string | undefined = undefined;
+    if (body.phone && body.phone.trim() !== '') {
+      const trimmedPhone = body.phone.trim();
+      if (!isValidGlobalPhoneNumber(trimmedPhone)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              'Invalid phone number. Please enter a valid global standard phone number with country code (e.g. +1 555 123 4567 or +91 98765 43210).',
+          },
+          { status: 400 }
+        );
+      }
+      sanitizedPhone = normalizeGlobalPhoneNumber(trimmedPhone);
+    }
+
     const newUser = await AuthRepository.createUser({
       email,
       fullName: body.fullName.trim(),
       passwordHash,
-      phone: body.phone?.trim(),
+      phone: sanitizedPhone,
       authProvider: 'credentials',
       emailVerified: false,
     });

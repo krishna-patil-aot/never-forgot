@@ -14,6 +14,7 @@ import {
   IUniversalAsset,
   SortOption,
 } from '@/types/asset.types';
+import { isDateBefore } from '@/lib/dateUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,6 +126,17 @@ export async function POST(
           success: false,
           data: null,
           error: 'Missing required fields (title, providerOrBrand, category, startDate, expiryOrRenewalDate)',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (isDateBefore(body.expiryOrRenewalDate, body.startDate)) {
+      return NextResponse.json(
+        {
+          success: false,
+          data: null,
+          error: 'Expiry or renewal date cannot be before the purchase date.',
         },
         { status: 400 }
       );

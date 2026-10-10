@@ -14,6 +14,7 @@ import {
 } from "@/types/api.types";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 import { compressDocument } from "@/lib/compression";
+import { isDateBefore } from "@/lib/dateUtils";
 
 export function useInvoiceScanner() {
   const {
@@ -221,6 +222,15 @@ export function useInvoiceScanner() {
   const handleConfirmAndSave = useCallback(async () => {
     if (!extractedData) return;
 
+    if (
+      extractedData.startDate &&
+      extractedData.expiryOrRenewalDate &&
+      isDateBefore(extractedData.expiryOrRenewalDate, extractedData.startDate)
+    ) {
+      setScanError("Expiry date cannot be before the purchase/start date.");
+      return;
+    }
+
     const safePrice =
       extractedData.price !== undefined && extractedData.price !== null
         ? Math.max(0, extractedData.price)
@@ -332,6 +342,7 @@ export function useInvoiceScanner() {
     openLoginModal,
     user,
     isSaving,
+    setScanError,
   ]);
 
   const handleDragOver = useCallback(

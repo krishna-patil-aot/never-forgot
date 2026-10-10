@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   CalendarViewMode,
   IUseCalendarProps,
   IUseCalendarReturn,
 } from '@/types/datePicker.types';
+import { parseToStartOfDay, parseToEndOfDay } from '@/lib/dateUtils';
 
 const YEARS_PER_PAGE = 12;
 
@@ -16,6 +17,9 @@ export function useCalendar({
   initialViewMode = 'days',
 }: IUseCalendarProps): IUseCalendarReturn {
   const [viewMode, setViewMode] = useState<CalendarViewMode>(initialViewMode);
+
+  const parsedMinDate = useMemo(() => parseToStartOfDay(minDate), [minDate]);
+  const parsedMaxDate = useMemo(() => parseToEndOfDay(maxDate), [maxDate]);
 
   // Initialize display month from selectedDate or today
   const [displayMonth, setDisplayMonth] = useState<Date>(() => {
@@ -51,13 +55,11 @@ export function useCalendar({
 
   const goToYear = useCallback((year: number) => {
     setDisplayMonth((prev) => new Date(year, prev.getMonth(), 1));
-    // As per user requirement: after selecting year, transition to 12 months view!
     setViewMode('months');
   }, []);
 
   const goToMonth = useCallback((monthIndex: number) => {
     setDisplayMonth((prev) => new Date(prev.getFullYear(), monthIndex, 1));
-    // After selecting month, transition to date selection view!
     setViewMode('days');
   }, []);
 
@@ -100,32 +102,32 @@ export function useCalendar({
 
   const isYearDisabled = useCallback(
     (year: number): boolean => {
-      if (minDate && year < minDate.getFullYear()) return true;
-      if (maxDate && year > maxDate.getFullYear()) return true;
+      if (parsedMinDate && year < parsedMinDate.getFullYear()) return true;
+      if (parsedMaxDate && year > parsedMaxDate.getFullYear()) return true;
       return false;
     },
-    [minDate, maxDate]
+    [parsedMinDate, parsedMaxDate]
   );
 
   const isMonthDisabled = useCallback(
     (year: number, monthIndex: number): boolean => {
-      if (minDate) {
-        const minYear = minDate.getFullYear();
-        const minMonth = minDate.getMonth();
+      if (parsedMinDate) {
+        const minYear = parsedMinDate.getFullYear();
+        const minMonth = parsedMinDate.getMonth();
         if (year < minYear || (year === minYear && monthIndex < minMonth)) {
           return true;
         }
       }
-      if (maxDate) {
-        const maxYear = maxDate.getFullYear();
-        const maxMonth = maxDate.getMonth();
+      if (parsedMaxDate) {
+        const maxYear = parsedMaxDate.getFullYear();
+        const maxMonth = parsedMaxDate.getMonth();
         if (year > maxYear || (year === maxYear && monthIndex > maxMonth)) {
           return true;
         }
       }
       return false;
     },
-    [minDate, maxDate]
+    [parsedMinDate, parsedMaxDate]
   );
 
   return {

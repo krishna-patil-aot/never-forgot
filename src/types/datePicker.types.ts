@@ -8,13 +8,15 @@ export interface IDatePickerProps {
   className?: string;
   id?: string;
   clearable?: boolean;
-  minDate?: Date;
-  maxDate?: Date;
+  minDate?: Date | string | null;
+  maxDate?: Date | string | null;
 }
 
 export interface IUseDatePickerProps {
   value?: string | Date | null;
   onChange?: (dateString: string) => void;
+  minDate?: Date | string | null;
+  maxDate?: Date | string | null;
 }
 
 export interface IUseDatePickerReturn {
@@ -24,12 +26,13 @@ export interface IUseDatePickerReturn {
   handleSelect: (date: Date | undefined) => void;
   handleClear: (e: React.MouseEvent) => void;
   handleToday: () => void;
+  isTodayDisabled: boolean;
 }
 
 export interface IUseCalendarProps {
   selectedDate?: Date;
-  minDate?: Date;
-  maxDate?: Date;
+  minDate?: Date | string | null;
+  maxDate?: Date | string | null;
   initialViewMode?: CalendarViewMode;
   onSelectDate?: (date: Date | undefined) => void;
 }

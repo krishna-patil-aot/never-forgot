@@ -2,14 +2,10 @@
 
 import * as React from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/hooks/useAuth';
-
-export interface IProfileHookFormData {
-  fullName: string;
-  phone: string;
-  notificationEmailEnabled: boolean;
-  notificationInAppEnabled: boolean;
-}
+import { profileFormSchema, IProfileHookFormData } from '@/types/profileForm.types';
+import { normalizeGlobalPhoneNumber } from '@/lib/phoneValidation';
 
 export function useProfileForm() {
   const {
@@ -27,6 +23,8 @@ export function useProfileForm() {
   const [isEditing, setIsEditing] = React.useState<boolean>(false);
 
   const form = useForm<IProfileHookFormData>({
+    resolver: zodResolver(profileFormSchema),
+    mode: 'onTouched',
     defaultValues: {
       fullName: user?.fullName || '',
       phone: user?.phone || '',
@@ -35,7 +33,13 @@ export function useProfileForm() {
     },
   });
 
-  const { register, handleSubmit: hookFormSubmit, setValue, reset } = form;
+  const {
+    register,
+    handleSubmit: hookFormSubmit,
+    setValue,
+    reset,
+    formState: { errors, isValid, isSubmitting },
+  } = form;
 
   // Sync form when user updates or modal opens
   React.useEffect(() => {
@@ -82,7 +86,18 @@ export function useProfileForm() {
   }, [clearMessages, closeProfileModal]);
 
   const onValidSubmit: SubmitHandler<IProfileHookFormData> = async (data) => {
-    const success = await updateUserProfile(data);
+    // Normalize phone number to standard E.164 canonical format if provided
+    const normalizedPhone = data.phone && data.phone.trim()
+      ? normalizeGlobalPhoneNumber(data.phone)
+      : '';
+
+    const success = await updateUserProfile({
+      fullName: data.fullName.trim(),
+      phone: normalizedPhone,
+      notificationEmailEnabled: data.notificationEmailEnabled,
+      notificationInAppEnabled: data.notificationInAppEnabled,
+    });
+
     if (success) {
       setIsEditing(false);
     }
@@ -98,6 +113,9 @@ export function useProfileForm() {
     register,
     handleSubmit: hookFormSubmit(onValidSubmit),
     setValue,
+    errors,
+    isValid,
+    isSubmitting: isSubmitting || isLoading,
     user,
     isProfileModalOpen,
     isEditing,

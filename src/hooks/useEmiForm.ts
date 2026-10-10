@@ -11,36 +11,48 @@ import { ICreateEmiDto } from '@/types/emi.types';
 import { IAttachedDocument } from '@/types/asset.types';
 import { compressDocument } from '@/lib/compression';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { isDateAfterOrEqual } from '@/lib/dateUtils';
 
-export const emiFormSchema = z.object({
-  title: z.string().min(2, 'Loan or EMI title is required'),
-  loanType: z.enum([
-    'home_loan',
-    'car_loan',
-    'personal_loan',
-    'bike_loan',
-    'education_loan',
-    'gold_loan',
-    'consumer_loan',
-    'business_loan',
-    'other',
-  ]),
-  lenderName: z.string().min(2, 'Bank or Lender name is required'),
-  accountNumber: z.string().optional(),
-  emiAmount: z.number().min(1, 'Monthly EMI amount must be greater than 0'),
-  dueDay: z
-    .number()
-    .min(1, 'Due day must be between 1 and 31')
-    .max(31, 'Due day must be between 1 and 31'),
-  totalLoanAmount: z.number().min(0, 'Total loan amount cannot be negative').optional(),
-  interestRate: z.number().min(0, 'Interest rate cannot be negative').optional(),
-  tenureMonths: z.number().min(1, 'Tenure must be at least 1 month').optional(),
-  startDate: z.string().min(4, 'Start date is required'),
-  endDate: z.string().optional(),
-  autoDebit: z.boolean(),
-  debitAccount: z.string().optional(),
-  notes: z.string().optional(),
-});
+export const emiFormSchema = z
+  .object({
+    title: z.string().min(2, 'Loan or EMI title is required'),
+    loanType: z.enum([
+      'home_loan',
+      'car_loan',
+      'personal_loan',
+      'bike_loan',
+      'education_loan',
+      'gold_loan',
+      'consumer_loan',
+      'business_loan',
+      'other',
+    ]),
+    lenderName: z.string().min(2, 'Bank or Lender name is required'),
+    accountNumber: z.string().optional(),
+    emiAmount: z.number().min(1, 'Monthly EMI amount must be greater than 0'),
+    dueDay: z
+      .number()
+      .min(1, 'Due day must be between 1 and 31')
+      .max(31, 'Due day must be between 1 and 31'),
+    totalLoanAmount: z.number().min(0, 'Total loan amount cannot be negative').optional(),
+    interestRate: z.number().min(0, 'Interest rate cannot be negative').optional(),
+    tenureMonths: z.number().min(1, 'Tenure must be at least 1 month').optional(),
+    startDate: z.string().min(4, 'Start date is required'),
+    endDate: z.string().optional(),
+    autoDebit: z.boolean(),
+    debitAccount: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (!data.startDate || !data.endDate) return true;
+      return isDateAfterOrEqual(data.endDate, data.startDate);
+    },
+    {
+      message: 'Loan completion end date cannot be before loan start date',
+      path: ['endDate'],
+    }
+  );
 
 export type EmiFormData = z.infer<typeof emiFormSchema>;
 
