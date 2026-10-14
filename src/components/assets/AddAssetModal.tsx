@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { DatePicker } from "@/components/ui/date-picker";
 import { useAssetStore } from "@/stores/useAssetStore";
-import { useAssetOperations } from "@/hooks/useAssetOperations";
+import { useAssetFormModal } from "@/hooks/useAssetFormModal";
 import { AssetCategory } from "@/types/asset.types";
 import { formatBytes } from "@/lib/compression";
 
@@ -51,7 +51,7 @@ export function AddAssetModal() {
     docError,
     handleDocumentSelect,
     handleRemoveDocument,
-  } = useAssetOperations();
+  } = useAssetFormModal();
 
   return (
     <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>

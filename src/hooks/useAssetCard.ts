@@ -12,8 +12,7 @@ import {
 import { useAssetStore } from '@/stores/useAssetStore';
 import { useDeleteConfirm } from '@/hooks/useDeleteConfirm';
 import { IUniversalAsset } from '@/types/asset.types';
-
-import moment from 'moment';
+import { startOfDay, differenceInCalendarDays } from 'date-fns';
 
 export interface ICategoryStyleConfig {
   icon: LucideIcon;
@@ -43,16 +42,16 @@ export function useAssetCard(asset: IUniversalAsset): IUseAssetCardReturn {
   const setIsEditModalOpen = useAssetStore((state) => state.setIsEditModalOpen);
   const { openDeleteModal } = useDeleteConfirm();
 
-  // Calculate percentage of elapsed warranty time powered by moment.js
+  // Calculate percentage of elapsed warranty time
   const { percentageElapsed, diffDays } = useMemo(() => {
-    const startM = moment(asset.startDate);
-    const expiryM = moment(asset.expiryOrRenewalDate);
-    const nowM = moment();
+    const start = startOfDay(new Date(asset.startDate));
+    const expiry = startOfDay(new Date(asset.expiryOrRenewalDate));
+    const now = startOfDay(new Date());
 
-    const totalDays = Math.max(1, expiryM.diff(startM, 'days'));
-    const elapsedDays = Math.max(0, nowM.diff(startM, 'days'));
+    const totalDays = Math.max(1, differenceInCalendarDays(expiry, start));
+    const elapsedDays = Math.max(0, differenceInCalendarDays(now, start));
     const pct = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
-    const days = expiryM.diff(nowM, 'days');
+    const days = differenceInCalendarDays(expiry, now);
 
     return { percentageElapsed: pct, diffDays: days };
   }, [asset.startDate, asset.expiryOrRenewalDate]);

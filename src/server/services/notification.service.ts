@@ -1,4 +1,12 @@
-import moment from 'moment';
+import {
+  format,
+  startOfDay,
+  differenceInCalendarDays,
+  setDate,
+  getDaysInMonth,
+  addMonths,
+  isAfter,
+} from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { AssetCategory } from '@/types/asset.types';
 import { NotificationType } from '@/types/notification.types';
@@ -52,31 +60,19 @@ export class NotificationService {
     // Track which milestones have already been dispatched to prevent duplicate spam
     const existingMap = new Set<string>();
     for (const notif of existingNotifications) {
-      const notifMonth = moment(notif.createdAt).format('YYYY-MM');
+      const notifMonth = format(new Date(notif.createdAt), 'yyyy-MM');
       const linkMonthMatch = notif.link?.match(/month=([0-9]{4}-[0-9]{2})/);
       const linkMonth = linkMonthMatch ? linkMonthMatch[1] : notifMonth;
 
       if (notif.assetId) {
         existingMap.add(`${notif.assetId}_${notif.type}`);
-        if (
-          notif.link?.includes('milestone=7d') ||
-          notif.title.includes('7-Day Reminder') ||
-          notif.type === 'expiry_warning_7d'
-        ) {
+        if (notif.link?.includes('milestone=7d') || notif.type === 'warranty_expiry_7d') {
           existingMap.add(`${notif.assetId}_warranty_expiry_7d`);
         }
-        if (
-          notif.link?.includes('milestone=1d') ||
-          notif.title.includes('Final Notice') ||
-          notif.title.includes('1-Day') ||
-          notif.type === 'expiry_warning_1d'
-        ) {
+        if (notif.link?.includes('milestone=1d') || notif.type === 'warranty_expiry_1d') {
           existingMap.add(`${notif.assetId}_warranty_expiry_1d`);
         }
-        if (
-          notif.link?.includes('milestone=expired') ||
-          notif.title.includes('Coverage Expired')
-        ) {
+        if (notif.link?.includes('milestone=expired')) {
           existingMap.add(`${notif.assetId}_warranty_expiry_expired`);
         }
       }
@@ -86,21 +82,12 @@ export class NotificationService {
         existingMap.add(`${notif.emiId}_${notif.type}_${notifMonth}`);
         existingMap.add(`${notif.emiId}_${notif.type}_${linkMonth}`);
 
-        if (
-          notif.link?.includes('milestone=7d') ||
-          notif.title.includes('7-Day') ||
-          notif.type === 'emi_reminder_7d'
-        ) {
+        if (notif.link?.includes('milestone=7d') || notif.type === 'emi_reminder_7d') {
           existingMap.add(`${notif.emiId}_emi_7d`);
           existingMap.add(`${notif.emiId}_emi_7d_${notifMonth}`);
           existingMap.add(`${notif.emiId}_emi_7d_${linkMonth}`);
         }
-        if (
-          notif.link?.includes('milestone=1d') ||
-          notif.title.includes('1-Day') ||
-          notif.title.includes('Urgent') ||
-          notif.type === 'emi_reminder_1d'
-        ) {
+        if (notif.link?.includes('milestone=1d') || notif.type === 'emi_reminder_1d') {
           existingMap.add(`${notif.emiId}_emi_1d`);
           existingMap.add(`${notif.emiId}_emi_1d_${notifMonth}`);
           existingMap.add(`${notif.emiId}_emi_1d_${linkMonth}`);
@@ -109,13 +96,13 @@ export class NotificationService {
     }
 
     let generatedCount = 0;
-    const nowMoment = moment().startOf('day');
+    const nowStart = startOfDay(new Date());
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://never-forgot.vercel.app/';
 
     for (const asset of assets) {
-      const expiryMoment = moment(asset.expiryOrRenewalDate).startOf('day');
-      const diffDays = expiryMoment.diff(nowMoment, 'days');
-      const formattedDate = expiryMoment.format('DD MMMM YYYY');
+      const expiryStart = startOfDay(new Date(asset.expiryOrRenewalDate));
+      const diffDays = differenceInCalendarDays(expiryStart, nowStart);
+      const formattedDate = format(expiryStart, 'dd MMMM yyyy');
 
       // -------------------------------------------------------------
       // 1. AUTOMATED 7-DAY ADVANCE REMINDER ("before 7 day")
@@ -137,7 +124,7 @@ export class NotificationService {
           existingMap.add(key7d);
           generatedCount++;
 
-          // Automated email reminder dispatch (no manual trigger required)
+          // Automated email reminder dispatch
           if (user?.email && user.notificationEmailEnabled) {
             EmailService.sendWarrantyExpiryAlert({
               recipientName: user.fullName || 'Valued User',
@@ -220,7 +207,7 @@ export class NotificationService {
         }
       }
 
-      // 2. Insurance Policy renewal alert
+      // 4. Insurance Policy renewal alert
       if (asset.policyDetails && diffDays <= 45) {
         const key = `${asset.id}_policy_renewal`;
         if (!existingMap.has(key)) {
@@ -229,7 +216,7 @@ export class NotificationService {
               userId,
               assetId: asset.id,
               title: `Policy Renewal: ${asset.title}`,
-              message: `Annual premium of ₹${asset.policyDetails.premiumAmount.toLocaleString()} is due on ${asset.expiryOrRenewalDate.toISOString().split('T')[0]}.`,
+              message: `Annual premium of ₹${asset.policyDetails.premiumAmount.toLocaleString('en-IN')} is due on ${format(new Date(asset.expiryOrRenewalDate), 'yyyy-MM-dd')}.`,
               category: asset.category,
               type: 'policy_renewal',
               link: `/#${asset.id}`,
@@ -240,10 +227,10 @@ export class NotificationService {
         }
       }
 
-      // 4. Upcoming service milestones
+      // 5. Upcoming service milestones
       for (const ms of asset.serviceMilestones) {
-        const msMoment = moment(ms.dueDate).startOf('day');
-        const msDiff = msMoment.diff(nowMoment, 'days');
+        const msStart = startOfDay(new Date(ms.dueDate));
+        const msDiff = differenceInCalendarDays(msStart, nowStart);
         if (msDiff >= 0 && msDiff <= 30) {
           const msKey = `${ms.id}_service_due`;
           if (!existingMap.has(msKey)) {
@@ -252,7 +239,7 @@ export class NotificationService {
                 userId,
                 assetId: asset.id,
                 title: `Service Due: ${ms.title}`,
-                message: `Scheduled service for ${asset.title} is due in ${msDiff} days (${msMoment.format('DD MMMM YYYY')}).`,
+                message: `Scheduled service for ${asset.title} is due in ${msDiff} days (${format(msStart, 'dd MMMM yyyy')}).`,
                 category: asset.category,
                 type: 'service_due',
                 link: `/#${asset.id}`,
@@ -266,32 +253,30 @@ export class NotificationService {
     }
 
     // =============================================================
-    // 5. AUTOMATED EMI INSTALLMENT REMINDERS (7-Day and 1-Day Notice)
+    // 6. AUTOMATED EMI INSTALLMENT REMINDERS (7-Day and 1-Day Notice)
     // =============================================================
-    const currentYearMonth = nowMoment.format('YYYY-MM');
+    const currentYearMonth = format(nowStart, 'yyyy-MM');
 
     for (const emi of emis) {
       const isPaidThisMonth = emi.lastPaidMonth === currentYearMonth;
       if (isPaidThisMonth) continue;
 
-      const currentMonthDue = moment()
-        .date(Math.min(emi.dueDay, moment().daysInMonth()))
-        .startOf('day');
+      const daysInCurrentMonth = getDaysInMonth(nowStart);
+      const currentMonthDue = startOfDay(setDate(nowStart, Math.min(emi.dueDay, daysInCurrentMonth)));
 
       let targetDueDate = currentMonthDue;
-      if (nowMoment.isAfter(currentMonthDue, 'day')) {
-        const nextMonth = moment().add(1, 'month');
-        targetDueDate = nextMonth
-          .date(Math.min(emi.dueDay, nextMonth.daysInMonth()))
-          .startOf('day');
+      if (isAfter(nowStart, currentMonthDue)) {
+        const nextMonth = addMonths(nowStart, 1);
+        const daysInNextMonth = getDaysInMonth(nextMonth);
+        targetDueDate = startOfDay(setDate(nextMonth, Math.min(emi.dueDay, daysInNextMonth)));
       }
 
-      const emiDiff = targetDueDate.diff(nowMoment, 'days');
-      const formattedEmiDate = targetDueDate.format('DD MMMM YYYY');
+      const emiDiff = differenceInCalendarDays(targetDueDate, nowStart);
+      const formattedEmiDate = format(targetDueDate, 'dd MMMM yyyy');
 
       // 1. 7-Day Reminder
       if (emiDiff <= 7 && emiDiff > 1) {
-        const targetMonth = targetDueDate.format('YYYY-MM');
+        const targetMonth = format(targetDueDate, 'yyyy-MM');
         const key7d = `${emi.id}_emi_7d_${targetMonth}`;
         const alreadyDispatched =
           existingMap.has(key7d) ||
@@ -301,7 +286,7 @@ export class NotificationService {
             (n) =>
               n.emiId === emi.id &&
               (n.type === 'emi_reminder_7d' || n.link?.includes('milestone=7d')) &&
-              moment(n.createdAt).format('YYYY-MM') === targetMonth
+              format(new Date(n.createdAt), 'yyyy-MM') === targetMonth
           );
 
         if (!alreadyDispatched) {
@@ -342,7 +327,7 @@ export class NotificationService {
 
       // 2. 1-Day Urgent Notice
       if (emiDiff <= 1 && emiDiff >= 0) {
-        const targetMonth = targetDueDate.format('YYYY-MM');
+        const targetMonth = format(targetDueDate, 'yyyy-MM');
         const key1d = `${emi.id}_emi_1d_${targetMonth}`;
         const alreadyDispatched =
           existingMap.has(key1d) ||
@@ -352,7 +337,7 @@ export class NotificationService {
             (n) =>
               n.emiId === emi.id &&
               (n.type === 'emi_reminder_1d' || n.link?.includes('milestone=1d')) &&
-              moment(n.createdAt).format('YYYY-MM') === targetMonth
+              format(new Date(n.createdAt), 'yyyy-MM') === targetMonth
           );
 
         if (!alreadyDispatched) {

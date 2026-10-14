@@ -1,4 +1,12 @@
-import moment from 'moment';
+import {
+  startOfDay,
+  format,
+  setDate,
+  getDaysInMonth,
+  addMonths,
+  differenceInCalendarDays,
+  isAfter,
+} from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import {
   IEmiReminder,
@@ -41,22 +49,20 @@ export function computeEmiDueDateDetails(dueDay: number, lastPaidMonth: string |
   isUrgent: boolean;
   isPaidThisMonth: boolean;
 } {
-  const now = moment().startOf('day');
-  const currentYearMonth = now.format('YYYY-MM');
-  const currentMonthDue = moment()
-    .date(Math.min(dueDay, moment().daysInMonth()))
-    .startOf('day');
+  const now = startOfDay(new Date());
+  const currentYearMonth = format(now, 'yyyy-MM');
+  const daysInCurrentMonth = getDaysInMonth(now);
+  const currentMonthDue = startOfDay(setDate(now, Math.min(dueDay, daysInCurrentMonth)));
 
   let targetDueDate = currentMonthDue;
-  if (now.isAfter(currentMonthDue, 'day')) {
+  if (isAfter(now, currentMonthDue)) {
     // If due day for this month has already passed, next due is next month
-    const nextMonth = moment().add(1, 'month');
-    targetDueDate = nextMonth
-      .date(Math.min(dueDay, nextMonth.daysInMonth()))
-      .startOf('day');
+    const nextMonth = addMonths(now, 1);
+    const daysInNextMonth = getDaysInMonth(nextMonth);
+    targetDueDate = startOfDay(setDate(nextMonth, Math.min(dueDay, daysInNextMonth)));
   }
 
-  const daysUntilDue = targetDueDate.diff(now, 'days');
+  const daysUntilDue = differenceInCalendarDays(targetDueDate, now);
   const isPaidThisMonth = lastPaidMonth === currentYearMonth;
   const isDueSoon = daysUntilDue <= 7 && daysUntilDue > 1 && !isPaidThisMonth;
   const isUrgent = daysUntilDue <= 1 && daysUntilDue >= 0 && !isPaidThisMonth;
@@ -279,9 +285,7 @@ export class EmiRepository {
       where: { id, userId },
     });
 
-    if (!existing) return null;
-
-    const currentMonth = moment().format('YYYY-MM');
+    const currentMonth = format(new Date(), 'yyyy-MM');
     const newPaidMonth = existing.lastPaidMonth === currentMonth ? null : currentMonth;
 
     const updated = await prisma.emiReminder.update({

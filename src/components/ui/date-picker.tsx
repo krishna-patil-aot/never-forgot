@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import moment from 'moment';
 import { Calendar as CalendarIcon, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import {
 } from '@/components/ui/popover';
 import { useDatePicker } from '@/hooks/useDatePicker';
 import { IDatePickerProps } from '@/types/datePicker.types';
-import { parseToStartOfDay, parseToEndOfDay } from '@/lib/dateUtils';
+import { parseToStartOfDay, parseToEndOfDay, formatDisplayDate } from '@/lib/dateUtils';
 
 export type { IDatePickerProps as DatePickerProps };
 
@@ -63,7 +62,7 @@ export function DatePicker({
         >
           <CalendarIcon className="mr-2 h-4 w-4 text-cyan-600 shrink-0" />
           <span className="flex-1 truncate">
-            {selectedDate ? moment(selectedDate).format('ll') : placeholder}
+            {selectedDate ? formatDisplayDate(selectedDate) : placeholder}
           </span>
           {clearable && selectedDate && !disabled && (
             <span

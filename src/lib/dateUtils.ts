@@ -1,17 +1,60 @@
-import moment from 'moment';
+import {
+  format,
+  formatDistanceToNow,
+  differenceInCalendarDays,
+  startOfDay,
+  endOfDay,
+  isBefore as dateFnsIsBefore,
+  isSameDay,
+  isAfter as dateFnsIsAfter,
+  isValid,
+  parseISO,
+} from 'date-fns';
 
 /**
- * Deterministic date formatter powered by moment.js.
+ * Safely parse any date input (string, Date, number, null) into a valid Date object.
+ */
+export function parseDateSafe(dateInput?: string | Date | number | null): Date | null {
+  if (!dateInput) return null;
+  if (dateInput instanceof Date) {
+    return isNaN(dateInput.getTime()) ? null : dateInput;
+  }
+  if (typeof dateInput === 'string') {
+    // Check YYYY-MM-DD or ISO string
+    const cleanStr = dateInput.split('T')[0];
+    const parts = cleanStr.split(/[-/]/);
+    if (parts.length === 3 && parts[0].length === 4) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      if (isValid(d)) return d;
+    }
+    const isoParsed = parseISO(dateInput);
+    if (isValid(isoParsed)) return isoParsed;
+    const fallback = new Date(dateInput);
+    return isValid(fallback) ? fallback : null;
+  }
+  const fallback = new Date(dateInput);
+  return isValid(fallback) ? fallback : null;
+}
+
+/**
+ * Deterministic date formatter powered by date-fns.
  * Produces identical formatted strings across SSR and client rendering.
  */
 export function formatDisplayDate(
   dateInput: string | Date | undefined | null,
-  formatStr: string = 'DD MMM YYYY'
+  formatPattern: string = 'dd MMM yyyy'
 ): string {
   if (!dateInput) return '';
-  const m = moment(dateInput);
-  if (!m.isValid()) return String(dateInput);
-  return m.format(formatStr);
+  const date = parseDateSafe(dateInput);
+  if (!date) return String(dateInput);
+  try {
+    return format(date, formatPattern);
+  } catch {
+    return String(dateInput);
+  }
 }
 
 /**
@@ -21,9 +64,9 @@ export function formatRelativeFromNow(
   dateInput: string | Date | undefined | null
 ): string {
   if (!dateInput) return '';
-  const m = moment(dateInput);
-  if (!m.isValid()) return '';
-  return m.fromNow();
+  const date = parseDateSafe(dateInput);
+  if (!date) return '';
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 /**
@@ -34,28 +77,31 @@ export function getDaysRemaining(
   dateInput: string | Date | undefined | null
 ): number {
   if (!dateInput) return 0;
-  const target = moment(dateInput).startOf('day');
-  const today = moment().startOf('day');
-  return target.diff(today, 'days');
+  const date = parseDateSafe(dateInput);
+  if (!date) return 0;
+  const target = startOfDay(date);
+  const today = startOfDay(new Date());
+  return differenceInCalendarDays(target, today);
 }
 
 /**
- * Human-friendly calendar date (e.g. "Today", "Tomorrow", "Next Friday")
+ * Human-friendly calendar date (e.g. "Today", "Tomorrow", "Yesterday", "dd MMM yyyy")
  */
 export function formatCalendarDate(
   dateInput: string | Date | undefined | null
 ): string {
   if (!dateInput) return '';
-  const m = moment(dateInput);
-  if (!m.isValid()) return '';
-  return m.calendar(null, {
-    sameDay: '[Today]',
-    nextDay: '[Tomorrow]',
-    nextWeek: 'dddd [next week]',
-    lastDay: '[Yesterday]',
-    lastWeek: '[Last] dddd',
-    sameElse: 'DD MMM YYYY',
-  });
+  const date = parseDateSafe(dateInput);
+  if (!date) return '';
+  const today = startOfDay(new Date());
+  const target = startOfDay(date);
+  const diffDays = differenceInCalendarDays(target, today);
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays === -1) return 'Yesterday';
+  if (diffDays > 1 && diffDays <= 7) return format(date, 'EEEE');
+  return format(date, 'dd MMM yyyy');
 }
 
 /**
@@ -75,9 +121,9 @@ export function parseToStartOfDay(
   dateInput?: string | Date | null
 ): Date | undefined {
   if (!dateInput) return undefined;
-  const m = moment(dateInput);
-  if (!m.isValid()) return undefined;
-  return m.startOf('day').toDate();
+  const date = parseDateSafe(dateInput);
+  if (!date) return undefined;
+  return startOfDay(date);
 }
 
 /**
@@ -87,9 +133,9 @@ export function parseToEndOfDay(
   dateInput?: string | Date | null
 ): Date | undefined {
   if (!dateInput) return undefined;
-  const m = moment(dateInput);
-  if (!m.isValid()) return undefined;
-  return m.endOf('day').toDate();
+  const date = parseDateSafe(dateInput);
+  if (!date) return undefined;
+  return endOfDay(date);
 }
 
 /**
@@ -100,10 +146,10 @@ export function isDateBefore(
   baseDate: string | Date
 ): boolean {
   if (!candidateDate || !baseDate) return false;
-  const candidate = moment(candidateDate).startOf('day');
-  const base = moment(baseDate).startOf('day');
-  if (!candidate.isValid() || !base.isValid()) return false;
-  return candidate.isBefore(base);
+  const candidate = parseDateSafe(candidateDate);
+  const base = parseDateSafe(baseDate);
+  if (!candidate || !base) return false;
+  return dateFnsIsBefore(startOfDay(candidate), startOfDay(base));
 }
 
 /**
@@ -114,10 +160,10 @@ export function isDateAfterOrEqual(
   baseDate: string | Date
 ): boolean {
   if (!candidateDate || !baseDate) return true;
-  const candidate = moment(candidateDate).startOf('day');
-  const base = moment(baseDate).startOf('day');
-  if (!candidate.isValid() || !base.isValid()) return true;
-  return candidate.isSameOrAfter(base);
+  const candidate = parseDateSafe(candidateDate);
+  const base = parseDateSafe(baseDate);
+  if (!candidate || !base) return true;
+  const startCand = startOfDay(candidate);
+  const startBase = startOfDay(base);
+  return isSameDay(startCand, startBase) || dateFnsIsAfter(startCand, startBase);
 }
-
-export { moment };
