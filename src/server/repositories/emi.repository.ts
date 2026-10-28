@@ -285,6 +285,8 @@ export class EmiRepository {
       where: { id, userId },
     });
 
+    if (!existing) return null;
+
     const currentMonth = format(new Date(), 'yyyy-MM');
     const newPaidMonth = existing.lastPaidMonth === currentMonth ? null : currentMonth;
 

@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   authors: [
     {
       name: "Krishna Patil",
-      url: "https://www.linkedin.com/in/krishnapatil-dev",
+      url: "https://www.linkedin.com/in/krishna-patil-dev",
     },
   ],
   creator: "Krishna Patil",
@@ -124,7 +124,7 @@ const jsonLd = {
   author: {
     "@type": "Person",
     name: "Krishna Patil",
-    url: "https://www.linkedin.com/in/krishnapatil-dev",
+    url: "https://www.linkedin.com/in/krishna-patil-dev",
   },
   featureList: [
     "AI Invoice & Bill OCR Scanner",
